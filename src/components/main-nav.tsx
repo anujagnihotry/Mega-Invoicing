@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, FileText, Settings } from 'lucide-react';
+import { LayoutDashboard, FileText, Settings, Warehouse, ShoppingCart } from 'lucide-react';
 import { APP_NAME } from '@/lib/constants';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from './ui/tooltip';
 
@@ -22,6 +22,18 @@ export function MainNav({ isCollapsed }: { isCollapsed: boolean }) {
       label: 'Invoices',
       icon: FileText,
       isActive: pathname.startsWith('/invoices'),
+    },
+    {
+      href: '/inventory',
+      label: 'Inventory',
+      icon: Warehouse,
+      isActive: pathname.startsWith('/inventory'),
+    },
+    {
+      href: '/purchases',
+      label: 'Purchases',
+      icon: ShoppingCart,
+      isActive: pathname.startsWith('/purchases'),
     },
     {
       href: '/settings',

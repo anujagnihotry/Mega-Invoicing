@@ -5,7 +5,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import { AppContext } from '@/contexts/app-context';
 import useLocalStorage from '@/hooks/use-local-storage';
 import { VALID_LICENSE_KEY } from '@/lib/constants';
-import type { Invoice, AppSettings } from '@/lib/types';
+import type { Invoice, AppSettings, Product, Purchase } from '@/lib/types';
+import { generateId } from '@/lib/utils';
 
 const defaultSettings: AppSettings = {
   currency: 'USD',
@@ -22,6 +23,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [invoices, setInvoices] = useLocalStorage<Invoice[]>('invoices', []);
   const [settings, setSettings] = useLocalStorage<AppSettings>('settings', defaultSettings);
+  const [products, setProducts] = useLocalStorage<Product[]>('products', []);
+  const [purchases, setPurchases] = useLocalStorage<Purchase[]>('purchases', []);
   
   const pathname = usePathname();
   const router = useRouter();
@@ -65,6 +68,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setSettings(prev => ({ ...prev, ...newSettings, companyProfile: {...prev.companyProfile, ...newSettings.companyProfile} }));
   }, [setSettings]);
 
+  const addProduct = useCallback((productData: Omit<Product, 'id' | 'quantity'>) => {
+    const newProduct: Product = {
+      id: generateId(),
+      quantity: 0,
+      ...productData,
+    };
+    setProducts(prev => [...prev, newProduct]);
+  }, [setProducts]);
+
+  const addPurchase = useCallback((purchase: Purchase) => {
+    setPurchases(prev => [...prev, purchase]);
+    setProducts(prevProducts => {
+      return prevProducts.map(p => {
+        if (p.id === purchase.productId) {
+          return { ...p, quantity: p.quantity + purchase.quantity };
+        }
+        return p;
+      });
+    });
+  }, [setProducts, setPurchases]);
+
   const contextValue = {
     licenseKey,
     setLicenseKey,
@@ -76,6 +100,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     deleteInvoice,
     settings,
     updateSettings,
+    products,
+    addProduct,
+    purchases,
+    addPurchase,
   };
   
   if (isLoading || (!licenseKey && pathname !== '/activate')) {

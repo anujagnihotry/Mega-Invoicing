@@ -8,7 +8,7 @@ export type LineItem = {
 export type InvoiceStatus = 'Draft' | 'Sent' | 'Paid' | 'Cancelled';
 
 export type Invoice = {
-  id: string;
+  id:string;
   invoiceNumber: string;
   clientName: string;
   clientEmail: string;
@@ -29,4 +29,17 @@ export type CompanyProfile = {
 export type AppSettings = {
   currency: string;
   companyProfile: CompanyProfile;
+};
+
+export type Product = {
+  id: string;
+  name: string;
+  quantity: number;
+};
+
+export type Purchase = {
+  id: string;
+  productId: string;
+  quantity: number;
+  purchaseDate: string;
 };

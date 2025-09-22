@@ -1,5 +1,5 @@
 import { createContext } from 'react';
-import type { Invoice, AppSettings } from '@/lib/types';
+import type { Invoice, AppSettings, Product, Purchase } from '@/lib/types';
 
 export interface AppContextType {
   licenseKey: string | null;
@@ -12,6 +12,10 @@ export interface AppContextType {
   deleteInvoice: (id: string) => void;
   settings: AppSettings;
   updateSettings: (newSettings: Partial<AppSettings>) => void;
+  products: Product[];
+  addPurchase: (purchase: Purchase) => void;
+  addProduct: (product: Omit<Product, 'id' | 'quantity'>) => void;
+  purchases: Purchase[];
 }
 
 export const AppContext = createContext<AppContextType | undefined>(undefined);
