@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import * as z from 'zod';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -14,31 +14,49 @@ import { useToast } from '@/hooks/use-toast';
 import { Purchase } from '@/lib/types';
 import { generateId } from '@/lib/utils';
 import Link from 'next/link';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { PlusCircle, Trash2 } from 'lucide-react';
 
 const purchaseFormSchema = z.object({
-  productId: z.string().min(1, 'Please select a product.'),
-  quantity: z.coerce.number().min(1, 'Quantity must be at least 1'),
+  invoiceNumber: z.string().min(1, 'Invoice number is required'),
+  date: z.string().min(1, 'Date is required'),
+  vendorName: z.string().min(1, 'Vendor name is required'),
+  items: z.array(z.object({
+    productId: z.string().min(1, 'Please select a product.'),
+    quantity: z.coerce.number().min(1, 'Quantity must be at least 1'),
+    price: z.coerce.number().min(0, 'Price must be non-negative'),
+  })).min(1, 'At least one item is required'),
 });
 
 export default function PurchasePage() {
   const router = useRouter();
-  const { products, addPurchase } = useApp();
+  const { products, addPurchase, units } = useApp();
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof purchaseFormSchema>>({
     resolver: zodResolver(purchaseFormSchema),
     defaultValues: {
-      productId: '',
-      quantity: 1,
+      invoiceNumber: '',
+      date: new Date().toISOString().split('T')[0],
+      vendorName: '',
+      items: [{ productId: '', quantity: 1, price: 0 }],
     },
   });
 
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "items"
+  });
+
   const onSubmit = (values: z.infer<typeof purchaseFormSchema>) => {
+    const totalAmount = values.items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
     const purchaseData: Purchase = {
       id: generateId(),
-      productId: values.productId,
-      quantity: values.quantity,
-      purchaseDate: new Date().toISOString(),
+      invoiceNumber: values.invoiceNumber,
+      date: new Date(values.date).toISOString(),
+      vendorName: values.vendorName,
+      items: values.items,
+      totalAmount: totalAmount,
     };
 
     addPurchase(purchaseData);
@@ -46,8 +64,15 @@ export default function PurchasePage() {
     router.push('/inventory');
   };
 
+  const getUnitName = (productId: string) => {
+    const product = products.find(p => p.id === productId);
+    if (!product) return '';
+    const unit = units.find(u => u.id === product.unitId);
+    return unit ? unit.name : '';
+  }
+
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-2xl font-bold">New Purchase Entry</h1>
@@ -70,46 +95,126 @@ export default function PurchasePage() {
             <Card>
               <CardHeader>
                 <CardTitle>Purchase Details</CardTitle>
-                <CardDescription>Select a product and enter the quantity purchased.</CardDescription>
+                <CardDescription>Enter vendor and purchase details.</CardDescription>
               </CardHeader>
-              <CardContent className="grid gap-4">
+              <CardContent className="grid md:grid-cols-3 gap-4">
                 <FormField
                   control={form.control}
-                  name="productId"
+                  name="invoiceNumber"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Product</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a product" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {products.map(product => (
-                            <SelectItem key={product.id} value={product.id}>{product.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <FormLabel>Invoice Number</FormLabel>
+                      <FormControl><Input {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                <FormField
+                 <FormField
                   control={form.control}
-                  name="quantity"
+                  name="date"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Quantity</FormLabel>
-                      <FormControl>
-                        <Input type="number" {...field} />
-                      </FormControl>
+                      <FormLabel>Date</FormLabel>
+                      <FormControl><Input type="date" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="vendorName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Vendor Name</FormLabel>
+                      <FormControl><Input {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
               </CardContent>
             </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Items</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="w-1/2">Product</TableHead>
+                                <TableHead>Quantity</TableHead>
+                                <TableHead>Unit</TableHead>
+                                <TableHead>Price</TableHead>
+                                <TableHead />
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {fields.map((field, index) => (
+                                <TableRow key={field.id}>
+                                    <TableCell>
+                                        <FormField
+                                            control={form.control}
+                                            name={`items.${index}.productId`}
+                                            render={({ field }) => (
+                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                    <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Select a product" />
+                                                    </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                    {products.map(product => (
+                                                        <SelectItem key={product.id} value={product.id}>{product.name}</SelectItem>
+                                                    ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            )}
+                                        />
+                                    </TableCell>
+                                    <TableCell>
+                                        <FormField
+                                            control={form.control}
+                                            name={`items.${index}.quantity`}
+                                            render={({ field }) => (
+                                                <Input type="number" {...field} />
+                                            )}
+                                        />
+                                    </TableCell>
+                                     <TableCell>
+                                        {getUnitName(form.watch(`items.${index}.productId`))}
+                                    </TableCell>
+                                    <TableCell>
+                                        <FormField
+                                            control={form.control}
+                                            name={`items.${index}.price`}
+                                            render={({ field }) => (
+                                                <Input type="number" step="0.01" {...field} />
+                                            )}
+                                        />
+                                    </TableCell>
+                                    <TableCell>
+                                        <Button variant="ghost" size="icon" onClick={() => remove(index)}>
+                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                     <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="mt-4"
+                        onClick={() => append({ productId: '', quantity: 1, price: 0 })}
+                        >
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Add Item
+                    </Button>
+                </CardContent>
+            </Card>
+
             <div className="flex justify-end">
                 <Button type="submit">
                 Record Purchase

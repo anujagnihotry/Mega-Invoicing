@@ -1,5 +1,5 @@
 import { createContext } from 'react';
-import type { Invoice, AppSettings, Product, Purchase } from '@/lib/types';
+import type { Invoice, AppSettings, Product, Purchase, Unit } from '@/lib/types';
 
 export interface AppContextType {
   licenseKey: string | null;
@@ -16,6 +16,8 @@ export interface AppContextType {
   addPurchase: (purchase: Purchase) => void;
   addProduct: (product: Omit<Product, 'id' | 'quantity'>) => void;
   purchases: Purchase[];
+  units: Unit[];
+  addUnit: (unit: Unit) => void;
 }
 
 export const AppContext = createContext<AppContextType | undefined>(undefined);

@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { AppContext } from '@/contexts/app-context';
 import useLocalStorage from '@/hooks/use-local-storage';
 import { VALID_LICENSE_KEY } from '@/lib/constants';
-import type { Invoice, AppSettings, Product, Purchase } from '@/lib/types';
+import type { Invoice, AppSettings, Product, Purchase, Unit } from '@/lib/types';
 import { generateId } from '@/lib/utils';
 
 const defaultSettings: AppSettings = {
@@ -16,6 +16,7 @@ const defaultSettings: AppSettings = {
     phone: '+1 (555) 123-4567',
     taxNumber: 'TAX-123456789',
   },
+  defaultTaxRule: 'per-item',
 };
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
@@ -25,6 +26,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useLocalStorage<AppSettings>('settings', defaultSettings);
   const [products, setProducts] = useLocalStorage<Product[]>('products', []);
   const [purchases, setPurchases] = useLocalStorage<Purchase[]>('purchases', []);
+  const [units, setUnits] = useLocalStorage<Unit[]>('units', []);
   
   const pathname = usePathname();
   const router = useRouter();
@@ -49,20 +51,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [isLoading, licenseKey, pathname, router, setLicenseKey]);
 
   const addInvoice = useCallback((invoice: Invoice) => {
-    setInvoices([...invoices, invoice]);
-  }, [invoices, setInvoices]);
+    setInvoices(prev => [...prev, invoice]);
+  }, [setInvoices]);
 
   const updateInvoice = useCallback((updatedInvoice: Invoice) => {
-    setInvoices(invoices.map(inv => (inv.id === updatedInvoice.id ? updatedInvoice : inv)));
-  }, [invoices, setInvoices]);
+    setInvoices(prev => prev.map(inv => (inv.id === updatedInvoice.id ? updatedInvoice : inv)));
+  }, [setInvoices]);
 
   const getInvoice = useCallback((id: string) => {
     return invoices.find(inv => inv.id === id);
   }, [invoices]);
 
   const deleteInvoice = useCallback((id: string) => {
-    setInvoices(invoices.filter(inv => inv.id !== id));
-  }, [invoices, setInvoices]);
+    setInvoices(prev => prev.filter(inv => inv.id !== id));
+  }, [setInvoices]);
 
   const updateSettings = useCallback((newSettings: Partial<AppSettings>) => {
     setSettings(prev => ({ ...prev, ...newSettings, companyProfile: {...prev.companyProfile, ...newSettings.companyProfile} }));
@@ -79,15 +81,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const addPurchase = useCallback((purchase: Purchase) => {
     setPurchases(prev => [...prev, purchase]);
+    
+    const productUpdates = new Map<string, number>();
+    purchase.items.forEach(item => {
+        productUpdates.set(item.productId, (productUpdates.get(item.productId) || 0) + item.quantity);
+    });
+
     setProducts(prevProducts => {
       return prevProducts.map(p => {
-        if (p.id === purchase.productId) {
-          return { ...p, quantity: p.quantity + purchase.quantity };
+        if (productUpdates.has(p.id)) {
+          return { ...p, quantity: p.quantity + (productUpdates.get(p.id) || 0) };
         }
         return p;
       });
     });
   }, [setProducts, setPurchases]);
+  
+  const addUnit = useCallback((unit: Unit) => {
+    setUnits(prev => [...prev, unit]);
+  }, [setUnits]);
 
   const contextValue = {
     licenseKey,
@@ -104,6 +116,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     addProduct,
     purchases,
     addPurchase,
+    units,
+    addUnit,
   };
   
   if (isLoading || (!licenseKey && pathname !== '/activate')) {
