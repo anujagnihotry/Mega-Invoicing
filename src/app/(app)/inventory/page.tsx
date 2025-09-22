@@ -22,7 +22,7 @@ const addProductSchema = z.object({
 });
 
 export default function InventoryPage() {
-  const { products, addProduct, units } = useApp();
+  const { products, addProduct, units, getAvailableStock } = useApp();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
 
   const form = useForm<z.infer<typeof addProductSchema>>({
@@ -138,7 +138,7 @@ export default function InventoryPage() {
               <TableRow>
                 <TableHead>Product Name</TableHead>
                 <TableHead>Unit</TableHead>
-                <TableHead className="text-right">Quantity</TableHead>
+                <TableHead className="text-right">Available Quantity</TableHead>
                 <TableHead className="text-right">Price</TableHead>
               </TableRow>
             </TableHeader>
@@ -148,7 +148,7 @@ export default function InventoryPage() {
                   <TableRow key={product.id}>
                     <TableCell className="font-medium">{product.name}</TableCell>
                     <TableCell>{getUnitName(product.unitId)}</TableCell>
-                    <TableCell className="text-right">{product.quantity}</TableCell>
+                    <TableCell className="text-right">{getAvailableStock(product.id)}</TableCell>
                      <TableCell className="text-right">{product.price}</TableCell>
                   </TableRow>
                 ))

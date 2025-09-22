@@ -15,7 +15,7 @@ import { Printer } from 'lucide-react';
 export default function ViewInvoicePage() {
   const router = useRouter();
   const params = useParams();
-  const { getInvoice, settings } = useApp();
+  const { getInvoice, settings, products } = useApp();
   const [invoice, setInvoice] = useState<Invoice | undefined>(undefined);
 
   useEffect(() => {
@@ -39,6 +39,11 @@ export default function ViewInvoicePage() {
   }
 
   const subtotal = invoice.items.reduce((acc, item) => acc + item.quantity * item.price, 0);
+  
+  const getItemDescription = (productId: string) => {
+      const product = products.find(p => p.id === productId);
+      return product?.name || 'Unknown Item';
+  }
 
   return (
     <div>
@@ -68,6 +73,7 @@ export default function ViewInvoicePage() {
               <h3 className="font-semibold mb-2">Bill To</h3>
               <p className="font-bold">{invoice.clientName}</p>
               <p className="text-muted-foreground">{invoice.clientEmail}</p>
+              {invoice.clientContact && <p className="text-muted-foreground">{invoice.clientContact}</p>}
             </div>
             <div className="text-right">
               <div className="grid grid-cols-2">
@@ -100,7 +106,7 @@ export default function ViewInvoicePage() {
             <TableBody>
               {invoice.items.map((item) => (
                 <TableRow key={item.id}>
-                  <TableCell className="font-medium">{item.description}</TableCell>
+                  <TableCell className="font-medium">{getItemDescription(item.productId)}</TableCell>
                   <TableCell className="text-center">{item.quantity}</TableCell>
                   <TableCell className="text-right">{formatCurrency(item.price, invoice.currency)}</TableCell>
                   <TableCell className="text-right">{formatCurrency(item.price * item.quantity, invoice.currency)}</TableCell>

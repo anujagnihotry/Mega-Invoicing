@@ -1,5 +1,6 @@
 export type LineItem = {
   id: string;
+  productId: string; // Link to the product
   description: string;
   quantity: number;
   price: number;
@@ -17,6 +18,7 @@ export type Invoice = {
   invoiceNumber: string;
   clientName: string;
   clientEmail: string;
+  clientContact?: string; // New field
   invoiceDate: string;
   dueDate: string;
   items: LineItem[];
@@ -53,6 +55,7 @@ export type Product = {
   price: number;
   quantity: number;
   unitId: string;
+  sales: { invoiceId: string, quantity: number }[]; // Track sales for inventory adjustments
   discount?: {
     type: 'fixed' | 'percentage';
     value: number;

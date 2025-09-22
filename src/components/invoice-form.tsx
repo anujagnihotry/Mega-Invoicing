@@ -8,30 +8,37 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableHeader, TableRow, TableHead, TableBody } from '@/components/ui/table';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, PlusCircle, Trash2 } from 'lucide-react';
-import { cn, formatCurrency, generateId } from '@/lib/utils';
+import { CalendarIcon, PlusCircle } from 'lucide-react';
+import { cn, formatCurrency } from '@/lib/utils';
 import { format } from 'date-fns';
 import { useApp } from '@/hooks/use-app';
-import type { Invoice, InvoiceStatus, LineItem } from '@/lib/types';
+import type { Invoice, InvoiceStatus } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { InvoiceReadabilityModal } from './invoice-readability-modal';
+import { InvoiceItemRow } from './invoice-item-row';
+import { useEffect } from 'react';
+
+const lineItemSchema = z.object({
+  id: z.string().optional(),
+  productId: z.string().min(1, 'Please select a product.'),
+  description: z.string().min(1, 'Description is required'),
+  quantity: z.coerce.number().min(1, 'Quantity must be at least 1'),
+  price: z.coerce.number().min(0, 'Price cannot be negative'),
+});
 
 const formSchema = z.object({
   invoiceNumber: z.string().min(1, 'Invoice number is required'),
   clientName: z.string().min(1, 'Client name is required'),
   clientEmail: z.string().email('Invalid email address'),
+  clientContact: z.string().optional(),
   invoiceDate: z.date({ required_error: 'Invoice date is required' }),
   dueDate: z.date({ required_error: 'Due date is required' }),
   status: z.enum(['Draft', 'Sent', 'Paid', 'Cancelled']),
-  items: z.array(z.object({
-    description: z.string().min(1, 'Description is required'),
-    quantity: z.coerce.number().min(1, 'Quantity must be at least 1'),
-    price: z.coerce.number().min(0, 'Price cannot be negative'),
-  })).min(1, 'At least one item is required'),
+  items: z.array(lineItemSchema).min(1, 'At least one item is required'),
 });
 
 type InvoiceFormProps = {
@@ -40,28 +47,66 @@ type InvoiceFormProps = {
 
 export function InvoiceForm({ invoice }: InvoiceFormProps) {
   const router = useRouter();
-  const { addInvoice, updateInvoice, settings, invoices } = useApp();
+  const { addInvoice, updateInvoice, settings, invoices, products, getAvailableStock } = useApp();
   const { toast } = useToast();
-  
+
+  // Custom validation refinement
+  const refinedSchema = formSchema.refine((data) => {
+    for (let i = 0; i < data.items.length; i++) {
+      const item = data.items[i];
+      const availableStock = getAvailableStock(item.productId, invoice?.id);
+      if (item.quantity > availableStock) {
+         toast({
+          variant: 'destructive',
+          title: 'Insufficient Stock',
+          description: `Cannot sell ${item.quantity} of ${item.description}. Only ${availableStock} available.`,
+        });
+        return false;
+      }
+    }
+    return true;
+  }, {
+    message: "One or more items has insufficient stock.",
+    // path: ['items'] // This would put the error on the whole array
+  });
+
   const defaultValues = invoice ? {
     ...invoice,
     invoiceDate: new Date(invoice.invoiceDate),
     dueDate: new Date(invoice.dueDate),
-    items: invoice.items.map(item => ({...item}))
   } : {
     invoiceNumber: `INV-${(invoices.length + 1).toString().padStart(4, '0')}`,
     clientName: '',
     clientEmail: '',
+    clientContact: '',
     invoiceDate: new Date(),
     dueDate: new Date(new Date().setDate(new Date().getDate() + 30)),
     status: 'Draft' as InvoiceStatus,
-    items: [{ description: '', quantity: 1, price: 0 }],
+    items: [],
   };
 
   const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(refinedSchema),
     defaultValues,
   });
+  
+  useEffect(() => {
+    if (invoice && products.length > 0) {
+      form.reset({
+        ...invoice,
+        invoiceDate: new Date(invoice.invoiceDate),
+        dueDate: new Date(invoice.dueDate),
+        items: invoice.items.map(item => {
+          const product = products.find(p => p.id === item.productId);
+          return {
+            ...item,
+            description: product?.name || item.description, // Ensure description is up-to-date
+          }
+        }),
+      });
+    }
+  }, [invoice, products, form.reset, form]);
+
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -69,20 +114,11 @@ export function InvoiceForm({ invoice }: InvoiceFormProps) {
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    const invoiceData: Invoice = {
-      id: invoice?.id || generateId(),
-      ...values,
-      invoiceDate: values.invoiceDate.toISOString(),
-      dueDate: values.dueDate.toISOString(),
-      currency: settings.currency,
-      items: values.items.map(item => ({...item, id: generateId()})),
-    };
-
     if (invoice) {
-      updateInvoice(invoiceData);
+      updateInvoice({ id: invoice.id, ...values });
       toast({ title: "Success", description: "Invoice updated successfully." });
     } else {
-      addInvoice(invoiceData);
+      addInvoice(values);
       toast({ title: "Success", description: "Invoice created successfully." });
     }
     router.push('/invoices');
@@ -102,6 +138,24 @@ export function InvoiceForm({ invoice }: InvoiceFormProps) {
     text += `\nSubtotal: ${formatCurrency(subtotal, settings.currency)}`;
     return text;
   };
+
+  const handleAddProduct = () => {
+    const firstProduct = products[0];
+    if (firstProduct) {
+       append({
+        productId: firstProduct.id,
+        description: firstProduct.name,
+        quantity: 1,
+        price: firstProduct.price,
+      });
+    } else {
+      toast({
+        variant: "destructive",
+        title: "No Products",
+        description: "Please add a product in the Inventory page before creating an invoice."
+      })
+    }
+  }
 
   return (
     <Form {...form}>
@@ -123,7 +177,7 @@ export function InvoiceForm({ invoice }: InvoiceFormProps) {
           <CardHeader>
             <CardTitle>Client Information</CardTitle>
           </CardHeader>
-          <CardContent className="grid md:grid-cols-2 gap-4">
+          <CardContent className="grid md:grid-cols-3 gap-4">
             <FormField
               control={form.control}
               name="clientName"
@@ -145,6 +199,19 @@ export function InvoiceForm({ invoice }: InvoiceFormProps) {
                   <FormLabel>Client Email</FormLabel>
                   <FormControl>
                     <Input placeholder="john.doe@example.com" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
+              name="clientContact"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Client Contact (Optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="+1 (555) 987-6543" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -257,7 +324,8 @@ export function InvoiceForm({ invoice }: InvoiceFormProps) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-1/2">Description</TableHead>
+                  <TableHead className="w-2/5">Item</TableHead>
+                  <TableHead>Available</TableHead>
                   <TableHead>Quantity</TableHead>
                   <TableHead>Price</TableHead>
                   <TableHead className="text-right">Total</TableHead>
@@ -266,43 +334,13 @@ export function InvoiceForm({ invoice }: InvoiceFormProps) {
               </TableHeader>
               <TableBody>
                 {fields.map((field, index) => (
-                  <TableRow key={field.id}>
-                    <TableCell>
-                      <FormField
-                        control={form.control}
-                        name={`items.${index}.description`}
-                        render={({ field }) => (
-                          <Input placeholder="Item description" {...field} />
-                        )}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <FormField
-                        control={form.control}
-                        name={`items.${index}.quantity`}
-                        render={({ field }) => (
-                          <Input type="number" {...field} />
-                        )}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <FormField
-                        control={form.control}
-                        name={`items.${index}.price`}
-                        render={({ field }) => (
-                          <Input type="number" step="0.01" {...field} />
-                        )}
-                      />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {formatCurrency((watchItems[index]?.quantity || 0) * (watchItems[index]?.price || 0), settings.currency)}
-                    </TableCell>
-                    <TableCell>
-                      <Button variant="ghost" size="icon" onClick={() => remove(index)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
+                    <InvoiceItemRow 
+                        key={field.id}
+                        form={form}
+                        index={index}
+                        remove={remove}
+                        currentInvoiceId={invoice?.id}
+                    />
                 ))}
               </TableBody>
             </Table>
@@ -311,11 +349,12 @@ export function InvoiceForm({ invoice }: InvoiceFormProps) {
               variant="outline"
               size="sm"
               className="mt-4"
-              onClick={() => append({ description: '', quantity: 1, price: 0 })}
+              onClick={handleAddProduct}
             >
               <PlusCircle className="mr-2 h-4 w-4" />
               Add Item
             </Button>
+             <FormMessage>{form.formState.errors.items?.root?.message}</FormMessage>
           </CardContent>
         </Card>
         
