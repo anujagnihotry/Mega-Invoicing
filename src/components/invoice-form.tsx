@@ -17,7 +17,7 @@ import { cn, formatCurrency, generateId } from '@/lib/utils';
 import { format } from 'date-fns';
 import { useApp } from '@/hooks/use-app';
 import type { Invoice, InvoiceStatus, LineItem } from '@/lib/types';
-import { useToast } from './ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { InvoiceReadabilityModal } from './invoice-readability-modal';
 
 const formSchema = z.object({
