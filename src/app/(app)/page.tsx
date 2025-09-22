@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowUpRight, PlusCircle } from 'lucide-react';
+import { ArrowUpRight, PlusCircle, FileText } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -64,66 +64,65 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{invoices.length}</div>
-            <p className="text-xs text-muted-foreground">+2 since last week</p>
+            <p className="text-xs text-muted-foreground">You have {invoices.length} total invoices</p>
           </CardContent>
         </Card>
       </div>
-      <Card>
-        <CardHeader className="flex flex-row items-center">
-          <div className="grid gap-2">
-            <CardTitle>Recent Invoices</CardTitle>
-            <CardDescription>An overview of your most recent invoices.</CardDescription>
-          </div>
-          <Button asChild size="sm" className="ml-auto gap-1">
-            <Link href="/invoices">
-              View All
-              <ArrowUpRight className="h-4 w-4" />
-            </Link>
-          </Button>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Client</TableHead>
-                <TableHead className="hidden sm:table-cell">Status</TableHead>
-                <TableHead className="hidden sm:table-cell">Date</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {recentInvoices.length > 0 ? (
-                recentInvoices.map((invoice: Invoice) => (
+      <div className="grid gap-4 md:gap-8 lg:grid-cols-2">
+         <Card>
+           <CardHeader className="flex flex-row items-center">
+             <div className="grid gap-2">
+               <CardTitle>Recent Invoices</CardTitle>
+               <CardDescription>
+                 Your most recently created invoices.
+               </CardDescription>
+             </div>
+             <Button asChild size="sm" className="ml-auto gap-1">
+               <Link href="/invoices">
+                 View All
+                 <ArrowUpRight className="h-4 w-4" />
+               </Link>
+             </Button>
+           </CardHeader>
+           <CardContent>
+             <Table>
+               <TableHeader>
+                 <TableRow>
+                   <TableHead>Client</TableHead>
+                   <TableHead className="hidden xl:table-column">Status</TableHead>
+                   <TableHead className="text-right">Amount</TableHead>
+                 </TableRow>
+               </TableHeader>
+               <TableBody>
+                {recentInvoices.length > 0 ? recentInvoices.map((invoice: Invoice) => (
                   <TableRow key={invoice.id}>
                     <TableCell>
                       <div className="font-medium">{invoice.clientName}</div>
-                      <div className="hidden text-sm text-muted-foreground md:inline">{invoice.clientEmail}</div>
+                      <div className="hidden text-sm text-muted-foreground md:inline">
+                        {invoice.clientEmail}
+                      </div>
                     </TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                      <Badge className="text-xs" variant={invoice.status === 'Paid' ? 'secondary' : 'outline'}>
+                    <TableCell className="hidden xl:table-column">
+                      <Badge className="text-xs" variant="outline">
                         {invoice.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="hidden sm:table-cell">{new Date(invoice.invoiceDate).toLocaleDateString()}</TableCell>
                     <TableCell className="text-right">
-                      {formatCurrency(
-                        invoice.items.reduce((acc, item) => acc + item.quantity * item.price, 0),
-                        invoice.currency
-                      )}
+                      {formatCurrency(invoice.items.reduce((acc, item) => acc + item.quantity * item.price, 0), invoice.currency)}
                     </TableCell>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center">
-                    No recent invoices. <Link href="/invoices/new" className="text-primary underline">Create one now</Link>!
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                )) : (
+                  <TableRow>
+                    <TableCell colSpan={3} className="h-24 text-center">
+                      No recent invoices.
+                    </TableCell>
+                  </TableRow>
+                )}
+               </TableBody>
+             </Table>
+           </CardContent>
+         </Card>
+      </div>
     </div>
   );
 }
