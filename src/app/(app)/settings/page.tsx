@@ -16,6 +16,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { PlusCircle } from 'lucide-react';
+import type { AppSettings, Tax } from '@/lib/types';
 
 const currencies = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'INR'];
 
@@ -27,6 +28,11 @@ const settingsSchema = z.object({
     phone: z.string().min(1, 'Phone number is required'),
     taxNumber: z.string().optional(),
   }),
+  taxes: z.array(z.object({
+      id: z.string(),
+      name: z.string(),
+      rate: z.number(),
+  })).optional(),
 });
 
 const taxFormSchema = z.object({
@@ -43,7 +49,7 @@ export default function SettingsPage() {
     resolver: zodResolver(settingsSchema),
     defaultValues: settings,
   });
-  
+
   const taxForm = useForm<z.infer<typeof taxFormSchema>>({
     resolver: zodResolver(taxFormSchema),
     defaultValues: { name: '', rate: 0 },
@@ -54,7 +60,13 @@ export default function SettingsPage() {
   }, [settings, form]);
 
   const onSubmit = (values: z.infer<typeof settingsSchema>) => {
-    updateSettings(values);
+    // We only pass the fields that are managed by this form
+    // and preserve the taxes that are managed separately.
+    const settingsToUpdate: Partial<AppSettings> = {
+        currency: values.currency,
+        companyProfile: values.companyProfile,
+    };
+    updateSettings(settingsToUpdate);
     toast({
       title: 'Settings Saved',
       description: 'Your changes have been saved successfully.',
@@ -67,6 +79,8 @@ export default function SettingsPage() {
     taxForm.reset();
     setIsTaxDialogOpen(false);
   }
+
+  const currentTaxes = form.watch('taxes') || [];
 
   return (
     <Form {...form}>
@@ -232,8 +246,8 @@ export default function SettingsPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {settings.taxes?.length > 0 ? (
-                                settings.taxes.map((tax) => (
+                            {currentTaxes.length > 0 ? (
+                                currentTaxes.map((tax: Tax) => (
                                     <TableRow key={tax.id}>
                                         <TableCell className="font-medium">{tax.name}</TableCell>
                                         <TableCell className="text-right">{tax.rate.toFixed(2)}%</TableCell>

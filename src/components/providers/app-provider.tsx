@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -163,10 +164,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [invoices, setInvoices, setProducts]);
 
   const updateSettings = useCallback((newSettings: Partial<AppSettings>) => {
-    setSettings(prev => ({ ...prev, ...newSettings, companyProfile: {...prev.companyProfile, ...newSettings.companyProfile} }));
+    setSettings(prev => ({ ...prev, ...newSettings }));
   }, [setSettings]);
 
-  const addProduct = useCallback((productData: Omit<Product, 'id' | 'quantity'>) => {
+  const addProduct = useCallback((productData: Omit<Product, 'id' | 'quantity' | 'sales'>) => {
     const newProduct: Product = {
       id: generateId(),
       quantity: 0, // Initial quantity is 0, will be updated by purchases
