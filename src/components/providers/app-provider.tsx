@@ -58,7 +58,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       .filter(item => item.productId === productId)
       .reduce((sum, item) => sum + item.quantity, 0);
 
-    const stockSold = product.sales
+    const sales = product.sales || [];
+    const stockSold = sales
       .filter(sale => sale.invoiceId !== currentInvoiceId) // Exclude current invoice from calculation
       .reduce((sum, sale) => sum + sale.quantity, 0);
       
@@ -80,6 +81,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       for (const item of newInvoice.items) {
         const productIndex = newProducts.findIndex(p => p.id === item.productId);
         if (productIndex !== -1) {
+          if (!newProducts[productIndex].sales) {
+            newProducts[productIndex].sales = [];
+          }
           newProducts[productIndex].sales.push({ invoiceId: newInvoice.id, quantity: item.quantity });
         }
       }
@@ -98,7 +102,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if (originalInvoice) {
             for (const item of originalInvoice.items) {
                 const productIndex = newProducts.findIndex(p => p.id === item.productId);
-                if (productIndex !== -1) {
+                if (productIndex !== -1 && newProducts[productIndex].sales) {
                     const saleIndex = newProducts[productIndex].sales.findIndex(s => s.invoiceId === originalInvoice.id);
                     if (saleIndex !== -1) {
                         newProducts[productIndex].sales.splice(saleIndex, 1);
@@ -111,6 +115,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         for (const item of updatedInvoiceData.items) {
             const productIndex = newProducts.findIndex(p => p.id === item.productId);
             if (productIndex !== -1) {
+                 if (!newProducts[productIndex].sales) {
+                    newProducts[productIndex].sales = [];
+                 }
                  newProducts[productIndex].sales.push({ invoiceId: updatedInvoiceData.id, quantity: item.quantity });
             }
         }
@@ -137,7 +144,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const newProducts = [...prevProducts];
         for (const item of invoiceToDelete.items) {
             const productIndex = newProducts.findIndex(p => p.id === item.productId);
-            if (productIndex !== -1) {
+            if (productIndex !== -1 && newProducts[productIndex].sales) {
                  const saleIndex = newProducts[productIndex].sales.findIndex(s => s.invoiceId === id);
                  if(saleIndex !== -1) {
                     newProducts[productIndex].sales.splice(saleIndex, 1);
