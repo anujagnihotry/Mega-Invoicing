@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { AppContext, AppContextType } from '@/contexts/app-context';
 import useLocalStorage from '@/hooks/use-local-storage';
 import { VALID_LICENSE_KEY } from '@/lib/constants';
-import type { Invoice, AppSettings, Product, Purchase, Unit, LineItem } from '@/lib/types';
+import type { Invoice, AppSettings, Product, Purchase, Unit, LineItem, Tax } from '@/lib/types';
 import { generateId } from '@/lib/utils';
 
 const defaultSettings: AppSettings = {
@@ -17,6 +17,7 @@ const defaultSettings: AppSettings = {
     taxNumber: 'TAX-123456789',
   },
   defaultTaxRule: 'per-item',
+  taxes: [],
 };
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
@@ -48,6 +49,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
     }
   }, [isLoading, licenseKey, pathname, router, setLicenseKey]);
+  
+  const getInvoice = useCallback((id: string): Invoice | undefined => {
+    return invoices.find(invoice => invoice.id === id);
+  }, [invoices]);
 
   const getAvailableStock = useCallback((productId: string, currentInvoiceId?: string) => {
     const product = products.find(p => p.id === productId);
@@ -156,16 +161,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     setInvoices(prev => prev.filter(inv => inv.id !== id));
   }, [invoices, setInvoices, setProducts]);
-  
-  const getInvoice = useCallback((id: string): Invoice | undefined => {
-    return invoices.find(invoice => invoice.id === id);
-  }, [invoices]);
 
   const updateSettings = useCallback((newSettings: Partial<AppSettings>) => {
     setSettings(prev => ({ ...prev, ...newSettings, companyProfile: {...prev.companyProfile, ...newSettings.companyProfile} }));
   }, [setSettings]);
 
-  const addProduct = useCallback((productData: Omit<Product, 'id' | 'quantity' | 'sales'>) => {
+  const addProduct = useCallback((productData: Omit<Product, 'id' | 'quantity'>) => {
     const newProduct: Product = {
       id: generateId(),
       quantity: 0, // Initial quantity is 0, will be updated by purchases
@@ -185,6 +186,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const addUnit = useCallback((unit: Unit) => {
     setUnits(prev => [...prev, unit]);
   }, [setUnits]);
+  
+  const addTax = useCallback((tax: Omit<Tax, 'id'>) => {
+    const newTax: Tax = { id: generateId(), ...tax };
+    setSettings(prev => ({ ...prev, taxes: [...(prev.taxes || []), newTax]}));
+  }, [setSettings]);
 
   const contextValue: AppContextType = {
     licenseKey,
@@ -204,6 +210,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     units,
     addUnit,
     getAvailableStock,
+    addTax,
   };
   
   if (isLoading || (!licenseKey && pathname !== '/activate')) {

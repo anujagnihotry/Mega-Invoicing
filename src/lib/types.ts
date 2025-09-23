@@ -37,11 +37,18 @@ export type CompanyProfile = {
   taxNumber: string;
 };
 
+export type Tax = {
+    id: string;
+    name: string;
+    rate: number; // Percentage
+};
+
 export type AppSettings = {
   currency: string;
   companyProfile: CompanyProfile;
   defaultTaxRule: 'per-item' | 'per-bill';
   globalTaxPercent?: number;
+  taxes: Tax[];
 };
 
 export type Unit = {

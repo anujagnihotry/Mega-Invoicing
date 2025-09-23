@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -11,6 +12,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useApp } from '@/hooks/use-app';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { PlusCircle } from 'lucide-react';
 
 const currencies = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'INR'];
 
@@ -24,13 +28,24 @@ const settingsSchema = z.object({
   }),
 });
 
+const taxFormSchema = z.object({
+    name: z.string().min(1, 'Tax name is required'),
+    rate: z.coerce.number().min(0, 'Rate must be non-negative').max(100, 'Rate cannot exceed 100'),
+});
+
 export default function SettingsPage() {
-  const { settings, updateSettings } = useApp();
+  const { settings, updateSettings, addTax } = useApp();
   const { toast } = useToast();
+  const [isTaxDialogOpen, setIsTaxDialogOpen] = React.useState(false);
 
   const form = useForm<z.infer<typeof settingsSchema>>({
     resolver: zodResolver(settingsSchema),
     defaultValues: settings,
+  });
+  
+  const taxForm = useForm<z.infer<typeof taxFormSchema>>({
+    resolver: zodResolver(taxFormSchema),
+    defaultValues: { name: '', rate: 0 },
   });
 
   const onSubmit = (values: z.infer<typeof settingsSchema>) => {
@@ -40,6 +55,13 @@ export default function SettingsPage() {
       description: 'Your changes have been saved successfully.',
     });
   };
+  
+  const onTaxSubmit = (values: z.infer<typeof taxFormSchema>) => {
+    addTax(values);
+    toast({ title: 'Tax Added', description: `${values.name} has been added.` });
+    taxForm.reset();
+    setIsTaxDialogOpen(false);
+  }
 
   return (
     <Form {...form}>
@@ -54,8 +76,8 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
-            <Card>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <Card className="lg:col-span-1">
                 <CardHeader>
                     <CardTitle>Company Profile</CardTitle>
                     <CardDescription>Update your company's information. This will appear on invoices.</CardDescription>
@@ -116,7 +138,7 @@ export default function SettingsPage() {
                 </CardContent>
             </Card>
 
-            <Card>
+            <Card className="lg:col-span-2">
                 <CardHeader>
                     <CardTitle>Preferences</CardTitle>
                     <CardDescription>Customize application settings.</CardDescription>
@@ -144,6 +166,83 @@ export default function SettingsPage() {
                         </FormItem>
                     )}
                     />
+                </CardContent>
+            </Card>
+            
+            <Card className="lg:col-span-3">
+                <CardHeader className="flex flex-row items-center">
+                    <div>
+                        <CardTitle>Tax Master</CardTitle>
+                        <CardDescription>Manage tax rates for your invoices.</CardDescription>
+                    </div>
+                     <div className="ml-auto">
+                        <Dialog open={isTaxDialogOpen} onOpenChange={setIsTaxDialogOpen}>
+                            <DialogTrigger asChild>
+                                <Button size="sm">
+                                    <PlusCircle className="h-4 w-4 mr-2" />
+                                    New Tax
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>Add New Tax Rate</DialogTitle>
+                                </DialogHeader>
+                                <Form {...taxForm}>
+                                    <form onSubmit={taxForm.handleSubmit(onTaxSubmit)} className="space-y-4">
+                                        <FormField
+                                            control={taxForm.control}
+                                            name="name"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Tax Name</FormLabel>
+                                                    <FormControl><Input placeholder="e.g. GST, VAT" {...field} /></FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={taxForm.control}
+                                            name="rate"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Rate (%)</FormLabel>
+                                                    <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <Button type="submit">Add Tax</Button>
+                                    </form>
+                                </Form>
+                            </DialogContent>
+                        </Dialog>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Tax Name</TableHead>
+                                <TableHead className="text-right">Rate (%)</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {settings.taxes && settings.taxes.length > 0 ? (
+                                settings.taxes.map(tax => (
+                                    <TableRow key={tax.id}>
+                                        <TableCell className="font-medium">{tax.name}</TableCell>
+                                        <TableCell className="text-right">{tax.rate.toFixed(2)}%</TableCell>
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell colSpan={2} className="h-24 text-center">
+                                        No tax rates found. Add one to get started.
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
                 </CardContent>
             </Card>
         </div>

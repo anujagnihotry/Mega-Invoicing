@@ -1,5 +1,5 @@
 import { createContext } from 'react';
-import type { Invoice, AppSettings, Product, Purchase, Unit } from '@/lib/types';
+import type { Invoice, AppSettings, Product, Purchase, Unit, Tax } from '@/lib/types';
 
 export interface AppContextType {
   licenseKey: string | null;
@@ -19,6 +19,7 @@ export interface AppContextType {
   units: Unit[];
   addUnit: (unit: Unit) => void;
   getAvailableStock: (productId: string, currentInvoiceId?: string) => number;
+  addTax: (tax: Omit<Tax, 'id'>) => void;
 }
 
 export const AppContext = createContext<AppContextType | undefined>(undefined);
