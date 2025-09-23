@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -231,8 +232,8 @@ export default function SettingsPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {settings.taxes && settings.taxes.length > 0 ? (
-                                settings.taxes.map(tax => (
+                            {settings.taxes?.length > 0 ? (
+                                settings.taxes.map((tax) => (
                                     <TableRow key={tax.id}>
                                         <TableCell className="font-medium">{tax.name}</TableCell>
                                         <TableCell className="text-right">{tax.rate.toFixed(2)}%</TableCell>
