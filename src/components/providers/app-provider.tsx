@@ -189,7 +189,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   
   const addTax = useCallback((tax: Omit<Tax, 'id'>) => {
     const newTax: Tax = { id: generateId(), ...tax };
-    setSettings(prev => ({ ...prev, taxes: [...(prev.taxes || []), newTax]}));
+    setSettings(prev => {
+        const updatedSettings = { ...prev, taxes: [...(prev.taxes || []), newTax] };
+        return updatedSettings;
+    });
   }, [setSettings]);
 
   const contextValue: AppContextType = {
