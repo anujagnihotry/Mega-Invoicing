@@ -48,6 +48,10 @@ export default function SettingsPage() {
     defaultValues: { name: '', rate: 0 },
   });
 
+  React.useEffect(() => {
+    form.reset(settings);
+  }, [settings, form]);
+
   const onSubmit = (values: z.infer<typeof settingsSchema>) => {
     updateSettings(values);
     toast({
