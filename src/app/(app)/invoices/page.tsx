@@ -37,9 +37,18 @@ export default function InvoicesPage() {
           ))}
         </TabsList>
         <div className="ml-auto flex items-center gap-2">
-          <Button size="sm" variant="outline">
-            Export
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" variant="outline">
+                Export
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Export Options</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => console.log('Exporting to PDF...')}>Export to PDF</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => console.log('Exporting to Excel...')}>Export to Excel</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button asChild size="sm">
             <Link href="/invoices/new">
               <PlusCircle className="h-4 w-4 mr-2" />
