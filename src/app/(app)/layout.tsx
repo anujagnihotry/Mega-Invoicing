@@ -26,7 +26,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           isCollapsed ? 'w-14' : 'w-56'
         )}
       >
-        <div className="flex h-16 items-center border-b px-4 lg:px-6">
+        <div className="flex h-16 items-center border-b px-4">
           <Link href="/" className="flex items-center gap-2 font-semibold">
             <FileText className="h-6 w-6 text-primary" />
             <span className={cn(isCollapsed && 'hidden')}>{APP_NAME}</span>
@@ -39,7 +39,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </Button>
         </div>
       </aside>
-      <div className={cn('flex flex-col sm:gap-4 sm:py-4 transition-[padding-left]', isCollapsed ? 'sm:pl-14' : 'sm:pl-56')}>
+      <div className={cn('flex flex-col sm:py-4 transition-[padding-left]', isCollapsed ? 'sm:pl-20' : 'sm:pl-60')}>
         <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 no-print">
           <Sheet>
             <SheetTrigger asChild>
@@ -50,7 +50,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </SheetTrigger>
             <SheetContent side="left" className="sm:max-w-xs">
               <div className="flex h-full max-h-screen flex-col gap-2">
-                <div className="flex h-16 items-center border-b px-4 lg:px-6">
+                <div className="flex h-16 items-center border-b px-4">
                   <Link href="/" className="flex items-center gap-2 font-semibold">
                     <FileText className="h-6 w-6 text-primary" />
                     <span>{APP_NAME}</span>
@@ -64,7 +64,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <UserNav />
           </div>
         </header>
-        <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
+        <main className="flex-1 space-y-6 p-4 sm:px-6 sm:py-0">
           {children}
         </main>
       </div>

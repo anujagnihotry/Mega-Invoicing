@@ -4,6 +4,7 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { AppProvider } from '@/components/providers/app-provider';
 import AppLayout from '@/app/(app)/layout';
+import PrintLayout from './print-layout';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
@@ -17,25 +18,20 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Check if we are on a print route
-  // This is a bit of a hack, but it's the most reliable way to do this
-  // with the current Next.js App Router limitations.
-  const isPrintPage = (children as any)?.props?.childProp?.segment === 'print';
-  const isActivatePage = (children as any)?.props?.childProp?.segment === 'activate';
+  // This is a hacky way to check the route segment, but necessary
+  // given the limitations of layouts in the Next.js App Router.
+  // We inspect the props of the children to determine the page's segment.
+  const segment = (children as any)?.props?.childProp?.segment;
 
-  if (isPrintPage) {
+  if (segment === 'print') {
     return (
-       <html lang="en" suppressHydrationWarning>
-        <body className={`${inter.variable} font-sans antialiased`}>
-          <AppProvider>
-            <main className="p-4 sm:px-6 sm:py-0">{children}</main>
-          </AppProvider>
-        </body>
-      </html>
-    )
+      <PrintLayout>
+        {children}
+      </PrintLayout>
+    );
   }
 
-  if(isActivatePage) {
+  if (segment === 'activate') {
      return (
        <html lang="en" suppressHydrationWarning>
         <body className={`${inter.variable} font-sans antialiased`}>

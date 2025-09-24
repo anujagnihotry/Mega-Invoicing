@@ -24,7 +24,7 @@ export default function Dashboard() {
   const recentInvoices = [...invoices].sort((a, b) => new Date(b.invoiceDate).getTime() - new Date(a.invoiceDate).getTime()).slice(0, 5);
 
   return (
-    <div className="flex flex-1 flex-col gap-4 md:gap-8">
+    <>
       <div className="flex items-center">
         <h1 className="font-semibold text-lg md:text-2xl">Dashboard</h1>
         <div className="ml-auto flex items-center gap-2">
@@ -36,7 +36,7 @@ export default function Dashboard() {
           </Button>
         </div>
       </div>
-      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
@@ -68,61 +68,59 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
-      <div className="grid gap-4 md:gap-8 lg:grid-cols-2">
-         <Card>
-           <CardHeader className="flex flex-row items-center">
-             <div className="grid gap-2">
-               <CardTitle>Recent Invoices</CardTitle>
-               <CardDescription>
-                 Your most recently created invoices.
-               </CardDescription>
-             </div>
-             <Button asChild size="sm" className="ml-auto gap-1">
-               <Link href="/invoices">
-                 View All
-                 <ArrowUpRight className="h-4 w-4" />
-               </Link>
-             </Button>
-           </CardHeader>
-           <CardContent>
-             <Table>
-               <TableHeader>
-                 <TableRow>
-                   <TableHead>Client</TableHead>
-                   <TableHead className="hidden xl:table-column">Status</TableHead>
-                   <TableHead className="text-right">Amount</TableHead>
-                 </TableRow>
-               </TableHeader>
-               <TableBody>
-                {recentInvoices.length > 0 ? recentInvoices.map((invoice: Invoice) => (
-                  <TableRow key={invoice.id}>
-                    <TableCell>
-                      <div className="font-medium">{invoice.clientName}</div>
-                      <div className="hidden text-sm text-muted-foreground md:inline">
-                        {invoice.clientEmail}
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden xl:table-column">
-                      <Badge className="text-xs" variant="outline">
-                        {invoice.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {formatCurrency(invoice.items.reduce((acc, item) => acc + item.quantity * item.price, 0), invoice.currency)}
-                    </TableCell>
-                  </TableRow>
-                )) : (
-                  <TableRow>
-                    <TableCell colSpan={3} className="h-24 text-center">
-                      No recent invoices.
-                    </TableCell>
-                  </TableRow>
-                )}
-               </TableBody>
-             </Table>
-           </CardContent>
-         </Card>
-      </div>
-    </div>
+      <Card>
+        <CardHeader className="flex flex-row items-center">
+          <div className="grid gap-2">
+            <CardTitle>Recent Invoices</CardTitle>
+            <CardDescription>
+              Your most recently created invoices.
+            </CardDescription>
+          </div>
+          <Button asChild size="sm" className="ml-auto gap-1">
+            <Link href="/invoices">
+              View All
+              <ArrowUpRight className="h-4 w-4" />
+            </Link>
+          </Button>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Client</TableHead>
+                <TableHead className="hidden xl:table-column">Status</TableHead>
+                <TableHead className="text-right">Amount</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+            {recentInvoices.length > 0 ? recentInvoices.map((invoice: Invoice) => (
+              <TableRow key={invoice.id}>
+                <TableCell>
+                  <div className="font-medium">{invoice.clientName}</div>
+                  <div className="hidden text-sm text-muted-foreground md:inline">
+                    {invoice.clientEmail}
+                  </div>
+                </TableCell>
+                <TableCell className="hidden xl:table-column">
+                  <Badge className="text-xs" variant="outline">
+                    {invoice.status}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  {formatCurrency(invoice.items.reduce((acc, item) => acc + item.quantity * item.price, 0), invoice.currency)}
+                </TableCell>
+              </TableRow>
+            )) : (
+              <TableRow>
+                <TableCell colSpan={3} className="h-24 text-center">
+                  No recent invoices.
+                </TableCell>
+              </TableRow>
+            )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </>
   );
 }
