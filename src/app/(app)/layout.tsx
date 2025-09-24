@@ -19,8 +19,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <MainNav isCollapsed={false} />
       </aside>
       <div className="flex flex-col sm:pl-56">
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 no-print">
-          <Sheet>
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6">
+           <Sheet>
             <SheetTrigger asChild>
               <Button size="icon" variant="outline" className="sm:hidden">
                 <Menu className="h-5 w-5" />
@@ -39,11 +39,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               </div>
             </SheetContent>
           </Sheet>
-          <div className="ml-auto flex items-center gap-4">
+          <div className="ml-auto">
             <UserNav />
           </div>
         </header>
-        <main className="flex-1 p-4 sm:px-6 sm:py-6 space-y-6">
+        <main className="flex-1 p-4 sm:px-6 sm:py-6">
           {children}
         </main>
       </div>
