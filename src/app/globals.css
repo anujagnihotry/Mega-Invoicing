@@ -69,13 +69,14 @@
 }
 
 @media print {
-  .no-print {
-    display: none !important;
-  }
   body {
     background-color: white !important;
   }
+  .no-print {
+    display: none !important;
+  }
   .print-container {
+    display: block !important;
     box-shadow: none !important;
     border: none !important;
     padding: 0 !important;

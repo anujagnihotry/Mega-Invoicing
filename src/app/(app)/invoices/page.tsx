@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { MoreHorizontal, PlusCircle, Printer } from 'lucide-react';
+import { MoreHorizontal, PlusCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -102,10 +102,6 @@ export default function InvoicesPage() {
               ))}
             </TabsList>
             <div className="ml-auto flex items-center gap-2">
-              <Button size="sm" variant="outline" onClick={() => window.print()}>
-                  <Printer className="mr-2 h-4 w-4" />
-                  Print
-              </Button>
               <Button asChild size="sm">
                 <Link href="/invoices/new">
                   <PlusCircle className="h-4 w-4 mr-2" />
