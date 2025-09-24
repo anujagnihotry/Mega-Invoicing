@@ -72,14 +72,19 @@
   body {
     background-color: white !important;
   }
-  .no-print {
+  .no-print, aside, header {
     display: none !important;
   }
   .print-container {
     display: block !important;
-    box-shadow: none !important;
-    border: none !important;
     padding: 0 !important;
     margin: 0 !important;
+  }
+   main {
+    padding: 0 !important;
+  }
+  .print-card {
+     box-shadow: none !important;
+     border: none !important;
   }
 }
