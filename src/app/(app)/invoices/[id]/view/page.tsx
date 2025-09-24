@@ -9,6 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Separator } from '@/components/ui/separator';
 import { formatCurrency } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Printer } from 'lucide-react';
 
 export default function ViewInvoicePage() {
   const router = useRouter();
@@ -46,6 +48,12 @@ export default function ViewInvoicePage() {
     <div className="print-container">
       <div className="flex items-center mb-4 no-print">
          <h1 className="font-semibold text-lg md:text-2xl">Invoice {invoice.invoiceNumber}</h1>
+         <div className="ml-auto">
+            <Button onClick={() => window.print()}>
+              <Printer className="mr-2 h-4 w-4" />
+              Print / Download PDF
+            </Button>
+          </div>
       </div>
       <Card className="w-full max-w-4xl mx-auto p-4 sm:p-10 print-card">
         <CardHeader className="p-0">
