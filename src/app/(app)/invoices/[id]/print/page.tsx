@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useApp } from '@/hooks/use-app';
 import { useEffect, useState } from 'react';
 import type { Invoice } from '@/lib/types';
@@ -9,12 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Separator } from '@/components/ui/separator';
 import { formatCurrency } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Printer } from 'lucide-react';
-import Link from 'next/link';
 
-export default function ViewInvoicePage() {
-  const router = useRouter();
+export default function PrintInvoicePage() {
   const params = useParams();
   const { getInvoice, settings, products } = useApp();
   const [invoice, setInvoice] = useState<Invoice | undefined>(undefined);
@@ -27,9 +23,15 @@ export default function ViewInvoicePage() {
     }
   }, [params.id, getInvoice]);
   
+  useEffect(() => {
+    if (invoice) {
+      setTimeout(() => window.print(), 500);
+    }
+  }, [invoice]);
+
   if (!invoice) {
     return (
-      <div className="flex h-[50vh] w-full items-center justify-center no-print">
+      <div className="flex h-screen w-full items-center justify-center">
         <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
@@ -46,19 +48,7 @@ export default function ViewInvoicePage() {
   }
 
   return (
-    <div className="print-container">
-      <div className="flex items-center mb-4 no-print">
-         <h1 className="font-semibold text-lg md:text-2xl">Invoice {invoice.invoiceNumber}</h1>
-         <div className="ml-auto">
-            <Button asChild>
-                <Link href={`/invoices/${invoice.id}/print`} target="_blank">
-                    <Printer className="mr-2 h-4 w-4" />
-                    Print / Download PDF
-                </Link>
-            </Button>
-          </div>
-      </div>
-      <Card className="w-full max-w-4xl mx-auto p-4 sm:p-10 print-card">
+      <Card className="w-full max-w-4xl mx-auto p-4 sm:p-10 border-none shadow-none">
         <CardHeader className="p-0">
           <div className="flex justify-between items-start">
             <div>
@@ -145,6 +135,5 @@ export default function ViewInvoicePage() {
           </div>
         </CardContent>
       </Card>
-    </div>
   );
 }
