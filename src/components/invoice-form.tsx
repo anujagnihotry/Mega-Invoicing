@@ -396,14 +396,17 @@ export function InvoiceForm({ invoice }: InvoiceFormProps) {
                         <FormItem>
                           <div className="flex justify-between items-center">
                             <FormLabel className="flex-1">Tax</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value || ''}>
+                            <Select 
+                                onValueChange={(value) => field.onChange(value === 'null' ? null : value)} 
+                                value={field.value ?? 'null'}
+                            >
                                 <FormControl>
                                 <SelectTrigger className="w-40">
                                     <SelectValue placeholder="Select Tax" />
                                 </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                    <SelectItem value="">No tax</SelectItem>
+                                    <SelectItem value="null">No tax</SelectItem>
                                     {settings.taxes.map((tax: Tax) => (
                                         <SelectItem key={tax.id} value={tax.id}>{tax.name} ({tax.rate}%)</SelectItem>
                                     ))}
