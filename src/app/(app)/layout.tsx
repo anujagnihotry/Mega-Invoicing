@@ -1,45 +1,24 @@
-'use client';
-
-import { useState } from 'react';
-import Link from 'next/link';
 import { MainNav } from '@/components/main-nav';
 import { UserNav } from '@/components/user-nav';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Menu, FileText } from 'lucide-react';
 import { APP_NAME } from '@/lib/constants';
-import { cn } from '@/lib/utils';
-import useLocalStorage from '@/hooks/use-local-storage';
+import Link from 'next/link';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const [isCollapsed, setIsCollapsed] = useLocalStorage('sidebar-collapsed', false);
-
-  const toggleSidebar = () => {
-    setIsCollapsed(!isCollapsed);
-  };
-
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
-      <aside
-        className={cn(
-          'fixed inset-y-0 left-0 z-10 hidden flex-col border-r bg-background sm:flex transition-[width]',
-          isCollapsed ? 'w-14' : 'w-56'
-        )}
-      >
+      <aside className="fixed inset-y-0 left-0 z-10 hidden w-56 flex-col border-r bg-background sm:flex">
         <div className="flex h-16 items-center border-b px-4">
           <Link href="/" className="flex items-center gap-2 font-semibold">
             <FileText className="h-6 w-6 text-primary" />
-            <span className={cn(isCollapsed && 'hidden')}>{APP_NAME}</span>
+            <span>{APP_NAME}</span>
           </Link>
         </div>
-        <MainNav isCollapsed={isCollapsed} />
-        <div className="mt-auto flex border-t p-4">
-          <Button variant="ghost" size="icon" onClick={toggleSidebar} className="rounded-full">
-            {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-          </Button>
-        </div>
+        <MainNav isCollapsed={false} />
       </aside>
-      <div className={cn('flex flex-col sm:py-4 transition-[padding-left]', isCollapsed ? 'sm:pl-20' : 'sm:pl-60')}>
+      <div className="flex flex-col sm:pl-56">
         <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 no-print">
           <Sheet>
             <SheetTrigger asChild>
@@ -64,7 +43,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <UserNav />
           </div>
         </header>
-        <main className="flex-1 space-y-6 p-4 sm:px-6 sm:py-0">
+        <main className="flex-1 p-4 sm:px-6 sm:py-6 space-y-6">
           {children}
         </main>
       </div>
