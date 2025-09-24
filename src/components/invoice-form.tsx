@@ -86,7 +86,7 @@ export function InvoiceForm({ invoice }: InvoiceFormProps) {
     dueDate: new Date(new Date().setDate(new Date().getDate() + 30)),
     status: 'Draft' as InvoiceStatus,
     items: [],
-    taxId: null,
+    taxId: settings.taxes.length > 0 ? settings.taxes[0].id : null,
   };
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -389,34 +389,35 @@ export function InvoiceForm({ invoice }: InvoiceFormProps) {
                         <span>Subtotal</span>
                         <span>{formatCurrency(subtotal, settings.currency)}</span>
                     </div>
-                    <FormField
-                      control={form.control}
-                      name="taxId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <div className="flex justify-between items-center">
-                            <FormLabel className="flex-1">Tax</FormLabel>
-                            <Select 
-                                onValueChange={(value) => field.onChange(value === 'null' ? null : value)} 
-                                value={field.value ?? 'null'}
-                            >
-                                <FormControl>
-                                <SelectTrigger className="w-40">
-                                    <SelectValue placeholder="Select Tax" />
-                                </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    <SelectItem value="null">No tax</SelectItem>
-                                    {settings.taxes.map((tax: Tax) => (
-                                        <SelectItem key={tax.id} value={tax.id}>{tax.name} ({tax.rate}%)</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    {settings.taxes.length > 0 && (
+                      <FormField
+                        control={form.control}
+                        name="taxId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <div className="flex justify-between items-center">
+                              <FormLabel className="flex-1">Tax</FormLabel>
+                              <Select 
+                                  onValueChange={field.onChange} 
+                                  value={field.value ?? undefined}
+                              >
+                                  <FormControl>
+                                  <SelectTrigger className="w-40">
+                                      <SelectValue placeholder="Select Tax" />
+                                  </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                      {settings.taxes.map((tax: Tax) => (
+                                          <SelectItem key={tax.id} value={tax.id}>{tax.name} ({tax.rate}%)</SelectItem>
+                                      ))}
+                                  </SelectContent>
+                              </Select>
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
                      {tax && (
                          <div className="flex justify-between">
                             <span className="text-muted-foreground">{tax.name} ({tax.rate}%)</span>
