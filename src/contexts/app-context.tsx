@@ -12,7 +12,7 @@ export interface AppContextType {
   getInvoice: (id: string) => Invoice | undefined;
   deleteInvoice: (id: string) => void;
   settings: AppSettings;
-  updateSettings: (newSettings: Partial<Omit<AppSettings, 'taxes'>>) => void;
+  updateSettings: (newSettings: AppSettings) => void;
   products: Product[];
   addPurchase: (purchase: Purchase) => void;
   addProduct: (product: Omit<Product, 'id' | 'sales'>) => void;
@@ -21,8 +21,8 @@ export interface AppContextType {
   addUnit: (unit: Unit) => void;
   getAvailableStock: (productId: string, currentInvoiceId?: string) => number;
   addTax: (tax: Omit<Tax, 'id'>) => void;
+  updateTax: (tax: Tax) => void;
+  deleteTax: (taxId: string) => void;
 }
 
 export const AppContext = createContext<AppContextType | undefined>(undefined);
-
-    

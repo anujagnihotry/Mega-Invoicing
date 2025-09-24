@@ -163,9 +163,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setInvoices(prev => prev.filter(inv => inv.id !== id));
   }, [invoices, setInvoices, setProducts]);
 
-  const updateSettings = useCallback((newSettings: Partial<Omit<AppSettings, 'taxes'>>) => {
+  const updateSettings = useCallback((newSettings: Partial<AppSettings>) => {
     setSettings(prev => ({ ...prev, ...newSettings }));
   }, [setSettings]);
+
 
   const addProduct = useCallback((productData: Omit<Product, 'id' | 'sales'>) => {
     const newProduct: Product = {
@@ -194,6 +195,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         return { ...prev, taxes: updatedTaxes };
     });
   }, [setSettings]);
+  
+  const updateTax = useCallback((tax: Tax) => {
+    setSettings(prev => {
+        const updatedTaxes = (prev.taxes || []).map(t => t.id === tax.id ? tax : t);
+        return { ...prev, taxes: updatedTaxes };
+    });
+  }, [setSettings]);
+
+  const deleteTax = useCallback((taxId: string) => {
+    setSettings(prev => {
+        const updatedTaxes = (prev.taxes || []).filter(t => t.id !== taxId);
+        return { ...prev, taxes: updatedTaxes };
+    });
+  }, [setSettings]);
+
 
   const contextValue: AppContextType = {
     licenseKey,
@@ -205,7 +221,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     getInvoice,
     deleteInvoice,
     settings,
-    updateSettings,
+    updateSettings: updateSettings as any,
     products,
     addProduct: addProduct as any,
     purchases,
@@ -214,6 +230,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     addUnit,
     getAvailableStock,
     addTax,
+    updateTax,
+    deleteTax
   };
   
   if (isLoading || (!licenseKey && pathname !== '/activate')) {
@@ -226,5 +244,3 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   return <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>;
 }
-
-    

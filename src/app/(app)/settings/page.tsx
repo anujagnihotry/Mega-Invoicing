@@ -14,9 +14,11 @@ import { useApp } from '@/hooks/use-app';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { PlusCircle } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { MoreHorizontal, PlusCircle, Trash2, Pencil } from 'lucide-react';
 import type { AppSettings, Tax } from '@/lib/types';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 const currencies = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'INR'];
 
@@ -36,17 +38,22 @@ const taxFormSchema = z.object({
 });
 
 export default function SettingsPage() {
-  const { settings, updateSettings, addTax } = useApp();
+  const { settings, updateSettings, addTax, updateTax, deleteTax } = useApp();
   const { toast } = useToast();
-  const [isTaxDialogOpen, setIsTaxDialogOpen] = React.useState(false);
+
+  const [isAddTaxDialogOpen, setIsAddTaxDialogOpen] = React.useState(false);
+  const [isEditTaxDialogOpen, setIsEditTaxDialogOpen] = React.useState(false);
+  const [editingTax, setEditingTax] = React.useState<Tax | null>(null);
 
   const form = useForm<z.infer<typeof settingsSchema>>({
     resolver: zodResolver(settingsSchema),
-    defaultValues: {
-      currency: settings.currency,
-      companyProfile: settings.companyProfile,
-    },
+    defaultValues: settings,
   });
+  
+  React.useEffect(() => {
+    form.reset(settings);
+  }, [settings, form]);
+
 
   const taxForm = useForm<z.infer<typeof taxFormSchema>>({
     resolver: zodResolver(taxFormSchema),
@@ -54,11 +61,13 @@ export default function SettingsPage() {
   });
 
   React.useEffect(() => {
-    form.reset({
-      currency: settings.currency,
-      companyProfile: settings.companyProfile,
-    });
-  }, [settings, form]);
+    if (editingTax) {
+      taxForm.reset({ name: editingTax.name, rate: editingTax.rate });
+    } else {
+      taxForm.reset({ name: '', rate: 0 });
+    }
+  }, [editingTax, taxForm]);
+
 
   const onSubmit = (values: z.infer<typeof settingsSchema>) => {
     updateSettings(values);
@@ -68,11 +77,29 @@ export default function SettingsPage() {
     });
   };
   
-  const onTaxSubmit = (values: z.infer<typeof taxFormSchema>) => {
+  const onAddTaxSubmit = (values: z.infer<typeof taxFormSchema>) => {
     addTax(values);
     toast({ title: 'Tax Added', description: `${values.name} has been added.` });
     taxForm.reset();
-    setIsTaxDialogOpen(false);
+    setIsAddTaxDialogOpen(false);
+  }
+  
+  const onEditTaxSubmit = (values: z.infer<typeof taxFormSchema>) => {
+    if (!editingTax) return;
+    updateTax({ id: editingTax.id, ...values });
+    toast({ title: 'Tax Updated', description: `${values.name} has been updated.` });
+    setEditingTax(null);
+    setIsEditTaxDialogOpen(false);
+  };
+  
+  const handleDeleteTax = (taxId: string) => {
+    deleteTax(taxId);
+    toast({ title: 'Tax Deleted', description: 'The tax rate has been deleted.' });
+  }
+
+  const handleEditClick = (tax: Tax) => {
+    setEditingTax(tax);
+    setIsEditTaxDialogOpen(true);
   }
 
   const currentTaxes = settings.taxes || [];
@@ -194,9 +221,9 @@ export default function SettingsPage() {
                   <CardDescription>Manage tax rates for your invoices.</CardDescription>
               </div>
                <div className="ml-auto">
-                  <Dialog open={isTaxDialogOpen} onOpenChange={setIsTaxDialogOpen}>
+                  <Dialog open={isAddTaxDialogOpen} onOpenChange={setIsAddTaxDialogOpen}>
                       <DialogTrigger asChild>
-                          <Button size="sm">
+                          <Button size="sm" onClick={() => taxForm.reset()}>
                               <PlusCircle className="h-4 w-4 mr-2" />
                               New Tax
                           </Button>
@@ -206,7 +233,7 @@ export default function SettingsPage() {
                               <DialogTitle>Add New Tax Rate</DialogTitle>
                           </DialogHeader>
                           <Form {...taxForm}>
-                              <form onSubmit={taxForm.handleSubmit(onTaxSubmit)} className="space-y-4">
+                              <form onSubmit={taxForm.handleSubmit(onAddTaxSubmit)} className="space-y-4">
                                   <FormField
                                       control={taxForm.control}
                                       name="name"
@@ -241,7 +268,8 @@ export default function SettingsPage() {
                   <TableHeader>
                       <TableRow>
                           <TableHead>Tax Name</TableHead>
-                          <TableHead className="text-right">Rate (%)</TableHead>
+                          <TableHead className="text-right w-[150px]">Rate (%)</TableHead>
+                          <TableHead className="w-[100px] text-right">Actions</TableHead>
                       </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -250,11 +278,48 @@ export default function SettingsPage() {
                               <TableRow key={tax.id}>
                                   <TableCell className="font-medium">{tax.name}</TableCell>
                                   <TableCell className="text-right">{tax.rate.toFixed(2)}%</TableCell>
+                                  <TableCell className="text-right">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon">
+                                                <MoreHorizontal className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent>
+                                            <DropdownMenuItem onClick={() => handleEditClick(tax)}>
+                                                <Pencil className="mr-2 h-4 w-4" />
+                                                Edit
+                                            </DropdownMenuItem>
+                                            <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                                        <Trash2 className="mr-2 h-4 w-4 text-destructive" />
+                                                        <span className="text-destructive">Delete</span>
+                                                    </DropdownMenuItem>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                            This action cannot be undone. This will permanently delete the tax rate.
+                                                        </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                        <AlertDialogAction onClick={() => handleDeleteTax(tax.id)}>
+                                                            Delete
+                                                        </AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                  </TableCell>
                               </TableRow>
                           ))
                       ) : (
                           <TableRow>
-                              <TableCell colSpan={2} className="h-24 text-center">
+                              <TableCell colSpan={3} className="h-24 text-center">
                                   No tax rates found. Add one to get started.
                               </TableCell>
                           </TableRow>
@@ -263,8 +328,44 @@ export default function SettingsPage() {
               </Table>
           </CardContent>
       </Card>
+      
+       <Dialog open={isEditTaxDialogOpen} onOpenChange={(isOpen) => {
+            if (!isOpen) setEditingTax(null);
+            setIsEditTaxDialogOpen(isOpen);
+        }}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Edit Tax Rate</DialogTitle>
+                </DialogHeader>
+                <Form {...taxForm}>
+                    <form onSubmit={taxForm.handleSubmit(onEditTaxSubmit)} className="space-y-4">
+                        <FormField
+                            control={taxForm.control}
+                            name="name"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Tax Name</FormLabel>
+                                    <FormControl><Input placeholder="e.g. GST, VAT" {...field} /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={taxForm.control}
+                            name="rate"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Rate (%)</FormLabel>
+                                    <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <Button type="submit">Save Changes</Button>
+                    </form>
+                </Form>
+            </DialogContent>
+        </Dialog>
     </div>
   );
 }
-
-    
