@@ -16,11 +16,12 @@ import { CalendarIcon, PlusCircle } from 'lucide-react';
 import { cn, formatCurrency } from '@/lib/utils';
 import { format } from 'date-fns';
 import { useApp } from '@/hooks/use-app';
-import type { Invoice, InvoiceStatus } from '@/lib/types';
+import type { Invoice, InvoiceStatus, Tax } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { InvoiceReadabilityModal } from './invoice-readability-modal';
 import { InvoiceItemRow } from './invoice-item-row';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
+import { Separator } from './ui/separator';
 
 const lineItemSchema = z.object({
   id: z.string().optional(),
@@ -39,6 +40,7 @@ const formSchema = z.object({
   dueDate: z.date({ required_error: 'Due date is required' }),
   status: z.enum(['Draft', 'Sent', 'Paid', 'Cancelled']),
   items: z.array(lineItemSchema).min(1, 'At least one item is required'),
+  taxId: z.string().nullable().optional(),
 });
 
 type InvoiceFormProps = {
@@ -74,6 +76,7 @@ export function InvoiceForm({ invoice }: InvoiceFormProps) {
     ...invoice,
     invoiceDate: new Date(invoice.invoiceDate),
     dueDate: new Date(invoice.dueDate),
+    taxId: invoice.taxId,
   } : {
     invoiceNumber: `INV-${(invoices.length + 1).toString().padStart(4, '0')}`,
     clientName: '',
@@ -83,6 +86,7 @@ export function InvoiceForm({ invoice }: InvoiceFormProps) {
     dueDate: new Date(new Date().setDate(new Date().getDate() + 30)),
     status: 'Draft' as InvoiceStatus,
     items: [],
+    taxId: null,
   };
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -96,6 +100,7 @@ export function InvoiceForm({ invoice }: InvoiceFormProps) {
         ...invoice,
         invoiceDate: new Date(invoice.invoiceDate),
         dueDate: new Date(invoice.dueDate),
+        taxId: invoice.taxId,
         items: invoice.items.map(item => {
           const product = products.find(p => p.id === item.productId);
           return {
@@ -125,7 +130,21 @@ export function InvoiceForm({ invoice }: InvoiceFormProps) {
   };
 
   const watchItems = form.watch('items');
+  const watchTaxId = form.watch('taxId');
   const subtotal = watchItems.reduce((acc, item) => acc + (item.quantity || 0) * (item.price || 0), 0);
+
+  const { tax, taxAmount, total } = useMemo(() => {
+    const selectedTax = settings.taxes.find(t => t.id === watchTaxId);
+    if (selectedTax) {
+        const calculatedTaxAmount = (subtotal * selectedTax.rate) / 100;
+        return {
+            tax: selectedTax,
+            taxAmount: calculatedTaxAmount,
+            total: subtotal + calculatedTaxAmount,
+        }
+    }
+    return { tax: null, taxAmount: 0, total: subtotal };
+  }, [subtotal, watchTaxId, settings.taxes]);
   
   const getInvoiceTextForAnalysis = () => {
     const values = form.getValues();
@@ -136,6 +155,10 @@ export function InvoiceForm({ invoice }: InvoiceFormProps) {
       text += `- ${item.description} (Qty: ${item.quantity}, Price: ${formatCurrency(item.price, settings.currency)})\n`;
     });
     text += `\nSubtotal: ${formatCurrency(subtotal, settings.currency)}`;
+    if (tax) {
+        text += `\nTax (${tax.name} @ ${tax.rate}%): ${formatCurrency(taxAmount, settings.currency)}`;
+    }
+    text += `\nTotal: ${formatCurrency(total, settings.currency)}`;
     return text;
   };
 
@@ -360,11 +383,49 @@ export function InvoiceForm({ invoice }: InvoiceFormProps) {
         
         <div className="flex justify-end">
           <Card className="w-full max-w-sm">
-             <CardContent className="p-4 space-y-2">
-               <div className="flex justify-between text-lg font-semibold">
-                 <span>Total</span>
-                 <span>{formatCurrency(subtotal, settings.currency)}</span>
-               </div>
+             <CardContent className="p-4 space-y-4">
+                <div className="space-y-2">
+                    <div className="flex justify-between">
+                        <span>Subtotal</span>
+                        <span>{formatCurrency(subtotal, settings.currency)}</span>
+                    </div>
+                    <FormField
+                      control={form.control}
+                      name="taxId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <div className="flex justify-between items-center">
+                            <FormLabel className="flex-1">Tax</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value || ''}>
+                                <FormControl>
+                                <SelectTrigger className="w-40">
+                                    <SelectValue placeholder="Select Tax" />
+                                </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    <SelectItem value="">No tax</SelectItem>
+                                    {settings.taxes.map((tax: Tax) => (
+                                        <SelectItem key={tax.id} value={tax.id}>{tax.name} ({tax.rate}%)</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                     {tax && (
+                         <div className="flex justify-between">
+                            <span className="text-muted-foreground">{tax.name} ({tax.rate}%)</span>
+                            <span>{formatCurrency(taxAmount, settings.currency)}</span>
+                        </div>
+                    )}
+                </div>
+                <Separator />
+                <div className="flex justify-between text-lg font-semibold">
+                    <span>Total</span>
+                    <span>{formatCurrency(total, settings.currency)}</span>
+                </div>
              </CardContent>
           </Card>
         </div>

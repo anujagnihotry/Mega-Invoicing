@@ -72,16 +72,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return stockFromPurchases - stockSold;
   }, [products, purchases]);
 
-  const addInvoice = useCallback((invoiceData: Omit<Invoice, 'id' | 'currency'>) => {
+  const calculateTaxAmount = (subtotal: number, taxId?: string | null): number => {
+    if (!taxId) return 0;
+    const tax = settings.taxes.find(t => t.id === taxId);
+    if (!tax) return 0;
+    return (subtotal * tax.rate) / 100;
+  }
+
+  const addInvoice = useCallback((invoiceData: Omit<Invoice, 'id' | 'currency' | 'taxAmount'>) => {
     setProducts(prevProducts => {
       const newProducts = [...prevProducts];
       const invoiceId = generateId();
+      const subtotal = invoiceData.items.reduce((acc, item) => acc + item.quantity * item.price, 0);
 
       const newInvoice: Invoice = {
         ...invoiceData,
         id: invoiceId,
         currency: settings.currency,
         items: invoiceData.items.map(item => ({ ...item, id: generateId() })),
+        taxAmount: calculateTaxAmount(subtotal, invoiceData.taxId),
       };
 
       for (const item of newInvoice.items) {
@@ -96,10 +105,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setInvoices(prev => [...prev, newInvoice]);
       return newProducts;
     });
-  }, [setInvoices, setProducts, settings.currency]);
+  }, [setInvoices, setProducts, settings.currency, settings.taxes]);
 
 
-  const updateInvoice = useCallback((updatedInvoiceData: Omit<Invoice, 'currency'>) => {
+  const updateInvoice = useCallback((updatedInvoiceData: Omit<Invoice, 'currency' | 'taxAmount'>) => {
      setProducts(prevProducts => {
         const newProducts = [...prevProducts];
         
@@ -129,17 +138,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
 
         // 3. Update the invoice itself
+        const subtotal = updatedInvoiceData.items.reduce((acc, item) => acc + item.quantity * item.price, 0);
         const updatedInvoice: Invoice = {
           ...updatedInvoiceData,
           currency: settings.currency,
-          items: updatedInvoiceData.items.map(item => ({...item, id: item.id || generateId()}))
+          items: updatedInvoiceData.items.map(item => ({...item, id: item.id || generateId()})),
+          taxAmount: calculateTaxAmount(subtotal, updatedInvoiceData.taxId),
         };
         
         setInvoices(prevInvoices => prevInvoices.map(inv => inv.id === updatedInvoice.id ? updatedInvoice : inv));
 
         return newProducts;
     });
-  }, [invoices, setInvoices, setProducts, settings.currency]);
+  }, [invoices, setInvoices, setProducts, settings.currency, settings.taxes]);
 
 
   const deleteInvoice = useCallback((id: string) => {
@@ -189,8 +200,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [setUnits]);
   
   const addTax = useCallback((tax: Omit<Tax, 'id'>) => {
+    const newTax: Tax = { id: generateId(), ...tax };
     setSettings(prev => {
-        const newTax: Tax = { id: generateId(), ...tax };
         const updatedTaxes = [...(prev.taxes || []), newTax];
         return { ...prev, taxes: updatedTaxes };
     });

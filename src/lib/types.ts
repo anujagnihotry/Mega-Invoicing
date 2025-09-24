@@ -1,4 +1,5 @@
 
+
 export type LineItem = {
   id: string;
   productId: string; // Link to the product
@@ -29,6 +30,8 @@ export type Invoice = {
     type: 'fixed' | 'percentage';
     value: number;
   };
+  taxId?: string | null;
+  taxAmount?: number;
 };
 
 export type CompanyProfile = {

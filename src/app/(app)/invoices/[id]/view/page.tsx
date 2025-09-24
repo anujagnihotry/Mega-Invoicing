@@ -39,6 +39,9 @@ export default function ViewInvoicePage() {
   }
 
   const subtotal = invoice.items.reduce((acc, item) => acc + item.quantity * item.price, 0);
+  const appliedTax = invoice.taxId ? settings.taxes.find(t => t.id === invoice.taxId) : null;
+  const taxAmount = invoice.taxAmount || 0;
+  const total = subtotal + taxAmount;
   
   const getItemDescription = (productId: string) => {
       const product = products.find(p => p.id === productId);
@@ -123,14 +126,16 @@ export default function ViewInvoicePage() {
                 <span className="text-muted-foreground">Subtotal</span>
                 <span>{formatCurrency(subtotal, invoice.currency)}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Tax (0%)</span>
-                <span>{formatCurrency(0, invoice.currency)}</span>
-              </div>
+              {appliedTax && (
+                <div className="flex justify-between">
+                    <span className="text-muted-foreground">{appliedTax.name} ({appliedTax.rate}%)</span>
+                    <span>{formatCurrency(taxAmount, invoice.currency)}</span>
+                </div>
+              )}
               <Separator />
               <div className="flex justify-between font-bold text-lg">
                 <span>Total</span>
-                <span>{formatCurrency(subtotal, invoice.currency)}</span>
+                <span>{formatCurrency(total, invoice.currency)}</span>
               </div>
             </div>
           </div>
