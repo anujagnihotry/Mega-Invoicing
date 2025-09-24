@@ -80,7 +80,7 @@ export default function InvoicesPage() {
                       <TableCell className="hidden md:table-cell">{new Date(invoice.dueDate).toLocaleDateString()}</TableCell>
                       <TableCell className="text-right">
                         {formatCurrency(
-                          invoice.items.reduce((acc, item) => acc + item.quantity * item.price, 0),
+                          invoice.items.reduce((acc, item) => acc + item.quantity * item.price, 0) + (invoice.taxAmount || 0),
                           invoice.currency
                         )}
                       </TableCell>
