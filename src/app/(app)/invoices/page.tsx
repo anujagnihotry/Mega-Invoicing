@@ -28,7 +28,7 @@ export default function InvoicesPage() {
 
   return (
     <Tabs defaultValue="All" onValueChange={(value) => setActiveTab(value as InvoiceStatus | 'All')}>
-      <div className="flex items-center">
+      <div className="flex items-center no-print">
         <TabsList>
           {statusTabs.map((status) => (
             <TabsTrigger key={status} value={status}>
@@ -45,8 +45,8 @@ export default function InvoicesPage() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Export Options</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => console.log('Exporting to PDF...')}>Export to PDF</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => console.log('Exporting to Excel...')}>Export to Excel</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => window.print()}>Export to PDF</DropdownMenuItem>
+              <DropdownMenuItem disabled>Export to Excel</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           <Button asChild size="sm">
@@ -58,8 +58,8 @@ export default function InvoicesPage() {
         </div>
       </div>
       <TabsContent value={activeTab}>
-        <Card>
-          <CardHeader>
+        <Card className="print-container">
+          <CardHeader className="no-print">
             <CardTitle>Invoices</CardTitle>
             <CardDescription>Manage your invoices and track their status.</CardDescription>
           </CardHeader>
@@ -72,7 +72,7 @@ export default function InvoicesPage() {
                   <TableHead className="hidden md:table-cell">Status</TableHead>
                   <TableHead className="hidden md:table-cell">Due Date</TableHead>
                   <TableHead className="text-right">Invoice Amount</TableHead>
-                  <TableHead>
+                  <TableHead className="no-print">
                     <span className="sr-only">Actions</span>
                   </TableHead>
                 </TableRow>
@@ -93,7 +93,7 @@ export default function InvoicesPage() {
                           invoice.currency
                         )}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="no-print">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button aria-haspopup="true" size="icon" variant="ghost">
