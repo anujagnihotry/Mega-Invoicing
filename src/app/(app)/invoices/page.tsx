@@ -62,7 +62,7 @@ export default function InvoicesPage() {
                   <TableHead>Client</TableHead>
                   <TableHead className="hidden md:table-cell">Status</TableHead>
                   <TableHead className="hidden md:table-cell">Due Date</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
+                  <TableHead className="text-right">Invoice Amount</TableHead>
                   <TableHead>
                     <span className="sr-only">Actions</span>
                   </TableHead>
@@ -77,7 +77,7 @@ export default function InvoicesPage() {
                       <TableCell className="hidden md:table-cell">
                         <Badge variant="outline">{invoice.status}</Badge>
                       </TableCell>
-                      <TableCell className="hidden md:table-cell">{new Date(invoice.dueDate).toLocaleDateString()}</TableCell>
+                      <TableCell className="hidden md-table-cell">{new Date(invoice.dueDate).toLocaleDateString()}</TableCell>
                       <TableCell className="text-right">
                         {formatCurrency(
                           invoice.items.reduce((acc, item) => acc + item.quantity * item.price, 0) + (invoice.taxAmount || 0),
