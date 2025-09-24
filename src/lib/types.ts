@@ -1,3 +1,4 @@
+
 export type LineItem = {
   id: string;
   productId: string; // Link to the product
@@ -34,7 +35,7 @@ export type CompanyProfile = {
   name: string;
   address: string;
   phone: string;
-  taxNumber: string;
+  taxNumber?: string;
 };
 
 export type Tax = {
@@ -60,7 +61,6 @@ export type Product = {
   id: string;
   name: string;
   price: number;
-  quantity: number;
   unitId: string;
   sales: { invoiceId: string, quantity: number }[]; // Track sales for inventory adjustments
   discount?: {
@@ -84,3 +84,5 @@ export type Purchase = {
   }[];
   totalAmount: number;
 };
+
+    

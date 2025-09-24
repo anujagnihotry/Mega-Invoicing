@@ -28,11 +28,6 @@ const settingsSchema = z.object({
     phone: z.string().min(1, 'Phone number is required'),
     taxNumber: z.string().optional(),
   }),
-  taxes: z.array(z.object({
-      id: z.string(),
-      name: z.string(),
-      rate: z.number(),
-  })).optional(),
 });
 
 const taxFormSchema = z.object({
@@ -47,7 +42,10 @@ export default function SettingsPage() {
 
   const form = useForm<z.infer<typeof settingsSchema>>({
     resolver: zodResolver(settingsSchema),
-    defaultValues: settings,
+    defaultValues: {
+      currency: settings.currency,
+      companyProfile: settings.companyProfile,
+    },
   });
 
   const taxForm = useForm<z.infer<typeof taxFormSchema>>({
@@ -56,20 +54,17 @@ export default function SettingsPage() {
   });
 
   React.useEffect(() => {
-    form.reset(settings);
+    form.reset({
+      currency: settings.currency,
+      companyProfile: settings.companyProfile,
+    });
   }, [settings, form]);
 
   const onSubmit = (values: z.infer<typeof settingsSchema>) => {
-    // We only pass the fields that are managed by this form
-    // and preserve the taxes that are managed separately.
-    const settingsToUpdate: Partial<AppSettings> = {
-        currency: values.currency,
-        companyProfile: values.companyProfile,
-    };
-    updateSettings(settingsToUpdate);
+    updateSettings(values);
     toast({
       title: 'Settings Saved',
-      description: 'Your changes have been saved successfully.',
+      description: 'Your company profile and currency have been saved.',
     });
   };
   
@@ -80,192 +75,196 @@ export default function SettingsPage() {
     setIsTaxDialogOpen(false);
   }
 
-  const currentTaxes = form.watch('taxes') || [];
+  const currentTaxes = settings.taxes || [];
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <div className="flex items-center">
-          <div>
-            <h1 className="text-2xl font-bold">Settings</h1>
-            <p className="text-muted-foreground">Manage your application and company settings.</p>
-          </div>
-          <div className="ml-auto">
-            <Button type="submit">Save Changes</Button>
-          </div>
+    <div className="space-y-8">
+      <div className="flex items-center">
+        <div>
+          <h1 className="text-2xl font-bold">Settings</h1>
+          <p className="text-muted-foreground">Manage your application and company settings.</p>
         </div>
+      </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            <Card className="lg:col-span-1">
-                <CardHeader>
-                    <CardTitle>Company Profile</CardTitle>
-                    <CardDescription>Update your company's information. This will appear on invoices.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <FormField
-                    control={form.control}
-                    name="companyProfile.name"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Company Name</FormLabel>
-                        <FormControl>
-                            <Input placeholder="Acme Inc." {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                    <FormField
-                    control={form.control}
-                    name="companyProfile.address"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Address</FormLabel>
-                        <FormControl>
-                            <Textarea placeholder="123 Main St, Anytown, USA" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                    <FormField
-                    control={form.control}
-                    name="companyProfile.phone"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Phone Number</FormLabel>
-                        <FormControl>
-                            <Input placeholder="+1 (555) 123-4567" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                    <FormField
-                    control={form.control}
-                    name="companyProfile.taxNumber"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Tax Number (Optional)</FormLabel>
-                        <FormControl>
-                            <Input placeholder="TAX-123456789" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                </CardContent>
-            </Card>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              <Card className="lg:col-span-1">
+                  <CardHeader>
+                      <CardTitle>Company Profile</CardTitle>
+                      <CardDescription>Update your company's information. This will appear on invoices.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                      <FormField
+                      control={form.control}
+                      name="companyProfile.name"
+                      render={({ field }) => (
+                          <FormItem>
+                          <FormLabel>Company Name</FormLabel>
+                          <FormControl>
+                              <Input placeholder="Acme Inc." {...field} />
+                          </FormControl>
+                          <FormMessage />
+                          </FormItem>
+                      )}
+                      />
+                      <FormField
+                      control={form.control}
+                      name="companyProfile.address"
+                      render={({ field }) => (
+                          <FormItem>
+                          <FormLabel>Address</FormLabel>
+                          <FormControl>
+                              <Textarea placeholder="123 Main St, Anytown, USA" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                          </FormItem>
+                      )}
+                      />
+                      <FormField
+                      control={form.control}
+                      name="companyProfile.phone"
+                      render={({ field }) => (
+                          <FormItem>
+                          <FormLabel>Phone Number</FormLabel>
+                          <FormControl>
+                              <Input placeholder="+1 (555) 123-4567" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                          </FormItem>
+                      )}
+                      />
+                      <FormField
+                      control={form.control}
+                      name="companyProfile.taxNumber"
+                      render={({ field }) => (
+                          <FormItem>
+                          <FormLabel>Tax Number (Optional)</FormLabel>
+                          <FormControl>
+                              <Input placeholder="TAX-123456789" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                          </FormItem>
+                      )}
+                      />
+                  </CardContent>
+              </Card>
 
-            <Card className="lg:col-span-2">
-                <CardHeader>
-                    <CardTitle>Preferences</CardTitle>
-                    <CardDescription>Customize application settings.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <FormField
-                    control={form.control}
-                    name="currency"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Default Currency</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select a currency" />
-                            </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                            {currencies.map(currency => (
-                                <SelectItem key={currency} value={currency}>{currency}</SelectItem>
-                            ))}
-                            </SelectContent>
-                        </Select>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                </CardContent>
-            </Card>
-            
-            <Card className="lg:col-span-3">
-                <CardHeader className="flex flex-row items-center">
-                    <div>
-                        <CardTitle>Tax Master</CardTitle>
-                        <CardDescription>Manage tax rates for your invoices.</CardDescription>
-                    </div>
-                     <div className="ml-auto">
-                        <Dialog open={isTaxDialogOpen} onOpenChange={setIsTaxDialogOpen}>
-                            <DialogTrigger asChild>
-                                <Button size="sm">
-                                    <PlusCircle className="h-4 w-4 mr-2" />
-                                    New Tax
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>Add New Tax Rate</DialogTitle>
-                                </DialogHeader>
-                                <Form {...taxForm}>
-                                    <form onSubmit={taxForm.handleSubmit(onTaxSubmit)} className="space-y-4">
-                                        <FormField
-                                            control={taxForm.control}
-                                            name="name"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Tax Name</FormLabel>
-                                                    <FormControl><Input placeholder="e.g. GST, VAT" {...field} /></FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                        <FormField
-                                            control={taxForm.control}
-                                            name="rate"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Rate (%)</FormLabel>
-                                                    <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                        <Button type="submit">Add Tax</Button>
-                                    </form>
-                                </Form>
-                            </DialogContent>
-                        </Dialog>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Tax Name</TableHead>
-                                <TableHead className="text-right">Rate (%)</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {currentTaxes.length > 0 ? (
-                                currentTaxes.map((tax: Tax) => (
-                                    <TableRow key={tax.id}>
-                                        <TableCell className="font-medium">{tax.name}</TableCell>
-                                        <TableCell className="text-right">{tax.rate.toFixed(2)}%</TableCell>
-                                    </TableRow>
-                                ))
-                            ) : (
-                                <TableRow>
-                                    <TableCell colSpan={2} className="h-24 text-center">
-                                        No tax rates found. Add one to get started.
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
-        </div>
-      </form>
-    </Form>
+              <Card className="lg:col-span-2">
+                  <CardHeader>
+                      <CardTitle>Preferences</CardTitle>
+                      <CardDescription>Customize application settings.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                      <FormField
+                      control={form.control}
+                      name="currency"
+                      render={({ field }) => (
+                          <FormItem>
+                          <FormLabel>Default Currency</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                              <SelectTrigger>
+                                  <SelectValue placeholder="Select a currency" />
+                              </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                              {currencies.map(currency => (
+                                  <SelectItem key={currency} value={currency}>{currency}</SelectItem>
+                              ))}
+                              </SelectContent>
+                          </Select>
+                          <FormMessage />
+                          </FormItem>
+                      )}
+                      />
+                  </CardContent>
+              </Card>
+          </div>
+          <div className="flex justify-end">
+             <Button type="submit">Save Changes</Button>
+          </div>
+        </form>
+      </Form>
+      
+      <Card className="lg:col-span-3">
+          <CardHeader className="flex flex-row items-center">
+              <div>
+                  <CardTitle>Tax Master</CardTitle>
+                  <CardDescription>Manage tax rates for your invoices.</CardDescription>
+              </div>
+               <div className="ml-auto">
+                  <Dialog open={isTaxDialogOpen} onOpenChange={setIsTaxDialogOpen}>
+                      <DialogTrigger asChild>
+                          <Button size="sm">
+                              <PlusCircle className="h-4 w-4 mr-2" />
+                              New Tax
+                          </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                          <DialogHeader>
+                              <DialogTitle>Add New Tax Rate</DialogTitle>
+                          </DialogHeader>
+                          <Form {...taxForm}>
+                              <form onSubmit={taxForm.handleSubmit(onTaxSubmit)} className="space-y-4">
+                                  <FormField
+                                      control={taxForm.control}
+                                      name="name"
+                                      render={({ field }) => (
+                                          <FormItem>
+                                              <FormLabel>Tax Name</FormLabel>
+                                              <FormControl><Input placeholder="e.g. GST, VAT" {...field} /></FormControl>
+                                              <FormMessage />
+                                          </FormItem>
+                                      )}
+                                  />
+                                  <FormField
+                                      control={taxForm.control}
+                                      name="rate"
+                                      render={({ field }) => (
+                                          <FormItem>
+                                              <FormLabel>Rate (%)</FormLabel>
+                                              <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
+                                              <FormMessage />
+                                          </FormItem>
+                                      )}
+                                  />
+                                  <Button type="submit">Add Tax</Button>
+                              </form>
+                          </Form>
+                      </DialogContent>
+                  </Dialog>
+              </div>
+          </CardHeader>
+          <CardContent>
+              <Table>
+                  <TableHeader>
+                      <TableRow>
+                          <TableHead>Tax Name</TableHead>
+                          <TableHead className="text-right">Rate (%)</TableHead>
+                      </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                      {currentTaxes.length > 0 ? (
+                          currentTaxes.map((tax: Tax) => (
+                              <TableRow key={tax.id}>
+                                  <TableCell className="font-medium">{tax.name}</TableCell>
+                                  <TableCell className="text-right">{tax.rate.toFixed(2)}%</TableCell>
+                              </TableRow>
+                          ))
+                      ) : (
+                          <TableRow>
+                              <TableCell colSpan={2} className="h-24 text-center">
+                                  No tax rates found. Add one to get started.
+                              </TableCell>
+                          </TableRow>
+                      )}
+                  </TableBody>
+              </Table>
+          </CardContent>
+      </Card>
+    </div>
   );
 }
+
+    

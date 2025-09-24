@@ -163,14 +163,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setInvoices(prev => prev.filter(inv => inv.id !== id));
   }, [invoices, setInvoices, setProducts]);
 
-  const updateSettings = useCallback((newSettings: Partial<AppSettings>) => {
+  const updateSettings = useCallback((newSettings: Partial<Omit<AppSettings, 'taxes'>>) => {
     setSettings(prev => ({ ...prev, ...newSettings }));
   }, [setSettings]);
 
-  const addProduct = useCallback((productData: Omit<Product, 'id' | 'quantity' | 'sales'>) => {
+  const addProduct = useCallback((productData: Omit<Product, 'id' | 'sales'>) => {
     const newProduct: Product = {
       id: generateId(),
-      quantity: 0, // Initial quantity is 0, will be updated by purchases
       sales: [],
       ...productData,
     };
@@ -227,3 +226,5 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   return <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>;
 }
+
+    

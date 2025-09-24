@@ -1,3 +1,4 @@
+
 import { createContext } from 'react';
 import type { Invoice, AppSettings, Product, Purchase, Unit, Tax } from '@/lib/types';
 
@@ -11,10 +12,10 @@ export interface AppContextType {
   getInvoice: (id: string) => Invoice | undefined;
   deleteInvoice: (id: string) => void;
   settings: AppSettings;
-  updateSettings: (newSettings: Partial<AppSettings>) => void;
+  updateSettings: (newSettings: Partial<Omit<AppSettings, 'taxes'>>) => void;
   products: Product[];
   addPurchase: (purchase: Purchase) => void;
-  addProduct: (product: Omit<Product, 'id' | 'quantity' | 'sales'>) => void;
+  addProduct: (product: Omit<Product, 'id' | 'sales'>) => void;
   purchases: Purchase[];
   units: Unit[];
   addUnit: (unit: Unit) => void;
@@ -23,3 +24,5 @@ export interface AppContextType {
 }
 
 export const AppContext = createContext<AppContextType | undefined>(undefined);
+
+    
