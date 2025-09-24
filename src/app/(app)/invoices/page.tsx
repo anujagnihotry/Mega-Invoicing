@@ -91,52 +91,54 @@ export default function InvoicesPage() {
 
   return (
     <>
-      <Tabs defaultValue="All" onValueChange={(value) => setActiveTab(value as InvoiceStatus | 'All')} className="no-print">
-        <div className="flex items-center">
-          <TabsList>
-            {statusTabs.map((status) => (
-              <TabsTrigger key={status} value={status}>
-                {status}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-          <div className="ml-auto flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button size="sm" variant="outline">
-                  Export
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Export Options</DropdownMenuLabel>
-                <DropdownMenuItem onClick={() => window.print()}>Export to PDF</DropdownMenuItem>
-                <DropdownMenuItem disabled>Export to Excel</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <Button asChild size="sm">
-              <Link href="/invoices/new">
-                <PlusCircle className="h-4 w-4 mr-2" />
-                New Invoice
-              </Link>
-            </Button>
+      <div className="no-print">
+        <Tabs defaultValue="All" onValueChange={(value) => setActiveTab(value as InvoiceStatus | 'All')}>
+          <div className="flex items-center">
+            <TabsList>
+              {statusTabs.map((status) => (
+                <TabsTrigger key={status} value={status}>
+                  {status}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+            <div className="ml-auto flex items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="outline">
+                    Export
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Export Options</DropdownMenuLabel>
+                  <DropdownMenuItem onClick={() => window.print()}>Export to PDF</DropdownMenuItem>
+                  <DropdownMenuItem disabled>Export to Excel</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button asChild size="sm">
+                <Link href="/invoices/new">
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  New Invoice
+                </Link>
+              </Button>
+            </div>
           </div>
-        </div>
-        
-        {statusTabs.map(status => (
-            <TabsContent key={status} value={status}>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Invoices</CardTitle>
-                        <CardDescription>Manage your invoices and track their status.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <InvoiceTable invoices={filteredInvoices} />
-                    </CardContent>
-                </Card>
-            </TabsContent>
-        ))}
+          
+          {statusTabs.map(status => (
+              <TabsContent key={status} value={status}>
+                  <Card>
+                      <CardHeader>
+                          <CardTitle>Invoices</CardTitle>
+                          <CardDescription>Manage your invoices and track their status.</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                          <InvoiceTable invoices={filteredInvoices} />
+                      </CardContent>
+                  </Card>
+              </TabsContent>
+          ))}
 
-      </Tabs>
+        </Tabs>
+      </div>
       <div className="print-container hidden print:block">
         <Card>
            <CardHeader>
