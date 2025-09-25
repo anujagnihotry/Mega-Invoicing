@@ -3,8 +3,6 @@ import { createContext } from 'react';
 import type { Invoice, AppSettings, Product, Purchase, Unit, Tax } from '@/lib/types';
 
 export interface AppContextType {
-  licenseKey: string | null;
-  setLicenseKey: (key: string | null) => void;
   isLoading: boolean;
   invoices: Invoice[];
   addInvoice: (invoice: Omit<Invoice, 'id' | 'currency' | 'items' | 'taxAmount'> & { items: Omit<Invoice['items'][0], 'id'>[] }) => void;

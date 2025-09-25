@@ -5,9 +5,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { AppContext, AppContextType } from '@/contexts/app-context';
 import useLocalStorage from '@/hooks/use-local-storage';
-import { VALID_LICENSE_KEY } from '@/lib/constants';
-import type { Invoice, AppSettings, Product, Purchase, Unit, LineItem, Tax } from '@/lib/types';
+import type { Invoice, AppSettings, Product, Purchase, Unit, Tax } from '@/lib/types';
 import { generateId } from '@/lib/utils';
+import { useUser } from '@/firebase';
 
 const defaultSettings: AppSettings = {
   currency: 'USD',
@@ -22,34 +22,26 @@ const defaultSettings: AppSettings = {
 };
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [licenseKey, setLicenseKey] = useLocalStorage<string | null>('licenseKey', null);
-  const [isLoading, setIsLoading] = useState(true);
   const [invoices, setInvoices] = useLocalStorage<Invoice[]>('invoices', []);
   const [settings, setSettings] = useLocalStorage<AppSettings>('settings', defaultSettings);
   const [products, setProducts] = useLocalStorage<Product[]>('products', []);
   const [purchases, setPurchases] = useLocalStorage<Purchase[]>('purchases', []);
   const [units, setUnits] = useLocalStorage<Unit[]>('units', []);
   
+  const { user, isUserLoading } = useUser();
   const pathname = usePathname();
   const router = useRouter();
 
   useEffect(() => {
-    setIsLoading(false);
-  }, []);
-
-  useEffect(() => {
-    if (!isLoading) {
-      const isActivatePage = pathname === '/activate';
-      if (!licenseKey && !isActivatePage) {
-        router.replace('/activate');
-      } else if (licenseKey && licenseKey !== VALID_LICENSE_KEY && !isActivatePage) {
-        setLicenseKey(null);
-        router.replace('/activate');
-      } else if (licenseKey === VALID_LICENSE_KEY && isActivatePage) {
+    if (!isUserLoading) {
+      const isAuthPage = ['/login', '/signup', '/forgot-password'].includes(pathname);
+      if (!user && !isAuthPage) {
+        router.replace('/login');
+      } else if (user && isAuthPage) {
         router.replace('/');
       }
     }
-  }, [isLoading, licenseKey, pathname, router, setLicenseKey]);
+  }, [isUserLoading, user, pathname, router]);
   
   const getInvoice = useCallback((id: string): Invoice | undefined => {
     return invoices.find(invoice => invoice.id === id);
@@ -223,9 +215,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
 
   const contextValue: AppContextType = {
-    licenseKey,
-    setLicenseKey,
-    isLoading,
+    isLoading: isUserLoading,
     invoices,
     addInvoice: addInvoice as any, // Cast to satisfy the complex type
     updateInvoice: updateInvoice as any, // Cast to satisfy the complex type
@@ -245,7 +235,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     deleteTax
   };
   
-  if (isLoading || (!licenseKey && pathname !== '/activate')) {
+  if (isUserLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
