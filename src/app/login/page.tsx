@@ -37,7 +37,7 @@ export default function LoginPage() {
       toast({
         variant: 'destructive',
         title: 'Login Failed',
-        description: error.message || 'An unknown error occurred.',
+        description: 'Invalid credentials. Please check your email and password.',
       });
       setIsLoading(false);
     }
