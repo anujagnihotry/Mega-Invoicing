@@ -48,9 +48,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
         <AppProvider>
-          <AppLayout>
-            {children}
-          </AppLayout>
+          {children}
           <Toaster />
         </AppProvider>
       </body>
