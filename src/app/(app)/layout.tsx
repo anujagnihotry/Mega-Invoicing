@@ -1,3 +1,4 @@
+
 import { MainNav } from '@/components/main-nav';
 import { UserNav } from '@/components/user-nav';
 import { Button } from '@/components/ui/button';
@@ -43,7 +44,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <UserNav />
           </div>
         </header>
-        <main className="flex-1 p-4 sm:px-6 sm:py-6">
+        <main className="flex-1 p-4 sm:px-6 sm:py-6 space-y-6">
           {children}
         </main>
       </div>
