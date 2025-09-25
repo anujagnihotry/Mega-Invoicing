@@ -25,13 +25,22 @@ export function UserNav() {
     router.push('/login');
   };
 
+  const getInitials = (name?: string | null) => {
+    if (!name) return user?.email?.charAt(0).toUpperCase();
+    const names = name.split(' ');
+    if (names.length > 1) {
+      return names[0][0] + names[names.length - 1][0];
+    }
+    return name.charAt(0);
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
             <AvatarImage src="https://picsum.photos/seed/user-avatar/40/40" alt="@user" />
-            <AvatarFallback>{user?.email?.charAt(0).toUpperCase()}</AvatarFallback>
+            <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
@@ -46,12 +55,6 @@ export function UserNav() {
             </p>
           </div>
         </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <DropdownMenuItem>Profile</DropdownMenuItem>
-          <DropdownMenuItem>Billing</DropdownMenuItem>
-          <DropdownMenuItem>Settings</DropdownMenuItem>
-        </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout}>
           Log out
