@@ -2,17 +2,27 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { MoreHorizontal, PlusCircle } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, FileDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent } from '@/components/ui/dropdown-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useApp } from '@/hooks/use-app';
 import { formatCurrency } from '@/lib/utils';
 import { Invoice, InvoiceStatus } from '@/lib/types';
 import { useRouter } from 'next/navigation';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import * as XLSX from 'xlsx';
+
+// Extend the jsPDF type to include the autoTable method from the jspdf-autotable plugin.
+declare module 'jspdf' {
+    interface jsPDF {
+      autoTable: (options: any) => jsPDF;
+    }
+}
 
 const statusTabs: (InvoiceStatus | 'All')[] = ['All', 'Draft', 'Sent', 'Paid', 'Cancelled'];
 
@@ -89,6 +99,39 @@ export default function InvoicesPage() {
     return invoices.filter((invoice) => invoice.status === activeTab);
   }, [invoices, activeTab]);
 
+  const exportToPDF = (data: Invoice[]) => {
+    const doc = new jsPDF();
+    doc.text(`Invoices - ${activeTab}`, 14, 16);
+    doc.autoTable({
+        startY: 22,
+        head: [['Invoice #', 'Client', 'Status', 'Due Date', 'Amount']],
+        body: data.map(inv => [
+            inv.invoiceNumber,
+            inv.clientName,
+            inv.status,
+            new Date(inv.dueDate).toLocaleDateString(),
+            formatCurrency(inv.items.reduce((acc, item) => acc + item.quantity * item.price, 0) + (inv.taxAmount || 0), inv.currency)
+        ])
+    });
+    doc.save(`invoices-${activeTab.toLowerCase()}.pdf`);
+  };
+
+  const exportToExcel = (data: Invoice[]) => {
+    const worksheet = XLSX.utils.json_to_sheet(data.map(inv => ({
+        'Invoice #': inv.invoiceNumber,
+        'Client': inv.clientName,
+        'Email': inv.clientEmail,
+        'Status': inv.status,
+        'Invoice Date': new Date(inv.invoiceDate).toLocaleDateString(),
+        'Due Date': new Date(inv.dueDate).toLocaleDateString(),
+        'Amount': inv.items.reduce((acc, item) => acc + item.quantity * item.price, 0) + (inv.taxAmount || 0),
+        'Currency': inv.currency,
+    })));
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Invoices');
+    XLSX.writeFile(workbook, `invoices-${activeTab.toLowerCase()}.xlsx`);
+  };
+
   return (
     <>
       <div className="no-print">
@@ -102,6 +145,19 @@ export default function InvoicesPage() {
               ))}
             </TabsList>
             <div className="ml-auto flex items-center gap-2">
+              <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm">
+                          <FileDown className="h-4 w-4 mr-2" />
+                          Export
+                      </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuLabel>Export As</DropdownMenuLabel>
+                    <DropdownMenuItem onSelect={() => exportToPDF(filteredInvoices)}>PDF</DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => exportToExcel(filteredInvoices)}>Excel</DropdownMenuItem>
+                  </DropdownMenuContent>
+              </DropdownMenu>
               <Button asChild size="sm">
                 <Link href="/invoices/new">
                   <PlusCircle className="h-4 w-4 mr-2" />
