@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -27,8 +28,8 @@ const lineItemSchema = z.object({
   id: z.string().optional(),
   productId: z.string().min(1, 'Please select a product.'),
   description: z.string().min(1, 'Description is required'),
-  quantity: z.coerce.number().min(1, 'Quantity must be at least 1'),
-  price: z.coerce.number().min(0, 'Price cannot be negative'),
+  quantity: z.coerce.number().gt(0, 'Quantity must be greater than 0'),
+  price: z.coerce.number().gt(0, 'Price must be greater than 0'),
 });
 
 const formSchema = z.object({

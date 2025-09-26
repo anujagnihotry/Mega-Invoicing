@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -17,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 const addProductSchema = z.object({
   name: z.string().min(1, 'Product name is required'),
-  price: z.coerce.number().min(0, 'Price must be non-negative'),
+  price: z.coerce.number().gt(0, 'Price must be greater than 0'),
   unitId: z.string().min(1, 'Unit is required'),
 });
 

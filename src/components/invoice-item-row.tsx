@@ -1,3 +1,4 @@
+
 'use client';
 
 import { UseFieldArrayRemove, UseFormReturn } from 'react-hook-form';
@@ -70,7 +71,7 @@ export function InvoiceItemRow({ form, index, remove, currentInvoiceId }: Invoic
           name={`items.${index}.quantity`}
           render={({ field }) => (
             <>
-                <Input type="number" {...field} />
+                <Input type="number" step="any" {...field} />
                 <FormMessage />
             </>
           )}
@@ -82,7 +83,7 @@ export function InvoiceItemRow({ form, index, remove, currentInvoiceId }: Invoic
           name={`items.${index}.price`}
           render={({ field }) => (
             <>
-                <Input type="number" step="0.01" {...field} />
+                <Input type="number" step="any" {...field} />
                 <FormMessage />
             </>
           )}

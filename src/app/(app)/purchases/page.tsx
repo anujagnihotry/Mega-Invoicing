@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -23,8 +24,8 @@ const purchaseFormSchema = z.object({
   vendorName: z.string().min(1, 'Vendor name is required'),
   items: z.array(z.object({
     productId: z.string().min(1, 'Please select a product.'),
-    quantity: z.coerce.number().min(1, 'Quantity must be at least 1'),
-    price: z.coerce.number().min(0, 'Price must be non-negative'),
+    quantity: z.coerce.number().gt(0, 'Quantity must be greater than 0'),
+    price: z.coerce.number().gt(0, 'Price must be greater than 0'),
   })).min(1, 'At least one item is required'),
 });
 
@@ -177,7 +178,7 @@ export default function PurchasePage() {
                                             control={form.control}
                                             name={`items.${index}.quantity`}
                                             render={({ field }) => (
-                                                <Input type="number" {...field} />
+                                                <Input type="number" step="any" {...field} />
                                             )}
                                         />
                                     </TableCell>
@@ -189,7 +190,7 @@ export default function PurchasePage() {
                                             control={form.control}
                                             name={`items.${index}.price`}
                                             render={({ field }) => (
-                                                <Input type="number" step="0.01" {...field} />
+                                                <Input type="number" step="any" {...field} />
                                             )}
                                         />
                                     </TableCell>
