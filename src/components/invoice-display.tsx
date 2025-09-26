@@ -1,6 +1,6 @@
 'use client';
 
-import type { Invoice, AppSettings, Product } from '@/lib/types';
+import type { Invoice, AppSettings, Product, Unit } from '@/lib/types';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
@@ -11,9 +11,10 @@ interface InvoiceDisplayProps {
   invoice: Invoice;
   settings: AppSettings;
   products: Product[];
+  units: Unit[];
 }
 
-export function InvoiceDisplay({ invoice, settings, products }: InvoiceDisplayProps) {
+export function InvoiceDisplay({ invoice, settings, products, units }: InvoiceDisplayProps) {
 
   const subtotal = invoice.items.reduce((acc, item) => acc + item.quantity * item.price, 0);
   const appliedTax = invoice.taxId ? settings.taxes.find(t => t.id === invoice.taxId) : null;
@@ -24,6 +25,13 @@ export function InvoiceDisplay({ invoice, settings, products }: InvoiceDisplayPr
       const product = products.find(p => p.id === productId);
       return product?.name || 'Unknown Item';
   }
+
+  const getUnitName = (productId: string) => {
+    const product = products.find(p => p.id === productId);
+    if (!product) return '';
+    const unit = units.find(u => u.id === product.unitId);
+    return unit ? unit.name : '';
+  };
 
   return (
     <Card className="w-full max-w-4xl mx-auto p-4 sm:p-10 print-card">
@@ -67,8 +75,9 @@ export function InvoiceDisplay({ invoice, settings, products }: InvoiceDisplayPr
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[50%]">Item</TableHead>
+              <TableHead className="w-[45%]">Item</TableHead>
               <TableHead className="text-center">Quantity</TableHead>
+              <TableHead className="text-center">Unit</TableHead>
               <TableHead className="text-right">Price</TableHead>
               <TableHead className="text-right">Total</TableHead>
             </TableRow>
@@ -78,6 +87,7 @@ export function InvoiceDisplay({ invoice, settings, products }: InvoiceDisplayPr
               <TableRow key={item.id}>
                 <TableCell className="font-medium">{getItemDescription(item.productId)}</TableCell>
                 <TableCell className="text-center">{item.quantity}</TableCell>
+                <TableCell className="text-center">{getUnitName(item.productId)}</TableCell>
                 <TableCell className="text-right">{formatCurrency(item.price, invoice.currency)}</TableCell>
                 <TableCell className="text-right">{formatCurrency(item.price * item.quantity, invoice.currency)}</TableCell>
               </TableRow>

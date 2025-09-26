@@ -11,7 +11,7 @@ import { InvoiceDisplay } from '@/components/invoice-display';
 
 export default function ViewInvoicePage() {
   const params = useParams();
-  const { getInvoice, settings, products } = useApp();
+  const { getInvoice, settings, products, units } = useApp();
   const [invoice, setInvoice] = useState<Invoice | undefined>(undefined);
 
   useEffect(() => {
@@ -43,7 +43,7 @@ export default function ViewInvoicePage() {
             </Button>
           </div>
       </div>
-      <InvoiceDisplay invoice={invoice} settings={settings} products={products} />
+      <InvoiceDisplay invoice={invoice} settings={settings} products={products} units={units} />
     </div>
   );
 }
