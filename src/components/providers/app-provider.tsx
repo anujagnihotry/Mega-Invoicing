@@ -153,8 +153,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }).catch(err => {
            toast({
               variant: 'destructive',
-              title: 'Email Failed',
-              description: 'Failed to send invoice email. Please check your SMTP settings.',
+              title: 'Email Failed to Send',
+              description: 'Please check your SMTP settings. If using Gmail, you may need to use an "App Password".',
           });
           console.error(err);
       })
