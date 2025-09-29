@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search } from 'lucide-react';
 import { subDays, startOfMonth } from 'date-fns';
+import { Separator } from '@/components/ui/separator';
 
 type Transaction = {
   date: Date;
@@ -131,29 +132,45 @@ export default function ItemTrackingPage() {
         <h1 className="font-semibold text-lg md:text-2xl">Item Tracking</h1>
       </div>
       
-       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-4">
-          {stockByUnit.length > 0 ? stockByUnit.map(({ unitName, stockIn, stockOut }) => (
-            <Card key={unitName}>
-                <CardHeader>
-                    <CardTitle>{unitName}</CardTitle>
-                    <CardDescription>Summary for this unit</CardDescription>
-                </CardHeader>
-                <CardContent className="grid grid-cols-2 gap-4">
-                    <div>
-                        <p className="text-sm font-medium text-green-800">Stock In</p>
-                        <p className="text-2xl font-bold text-green-900">{stockIn.toFixed(2)}</p>
-                    </div>
-                    <div>
-                        <p className="text-sm font-medium text-red-800">Stock Out</p>
-                        <p className="text-2xl font-bold text-red-900">{stockOut.toFixed(2)}</p>
-                    </div>
-                </CardContent>
-            </Card>
-          )) : (
-            <div className="md:col-span-2 lg:col-span-3 text-center text-muted-foreground py-4">
-                No stock movement data to display for the selected filters.
-            </div>
-          )}
+       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2 mb-4">
+          <Card>
+            <CardHeader>
+                <CardTitle className="text-green-700">Stock In by Unit</CardTitle>
+                <CardDescription>Total items added to inventory</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                {stockByUnit.filter(item => item.stockIn > 0).length > 0 ? stockByUnit.filter(item => item.stockIn > 0).map(({ unitName, stockIn }, index) => (
+                    <React.Fragment key={unitName}>
+                        <div className="flex justify-between items-center">
+                            <span className="font-medium">{unitName}</span>
+                            <span className="font-bold text-lg text-green-800">{stockIn.toFixed(2)}</span>
+                        </div>
+                        {index < stockByUnit.filter(item => item.stockIn > 0).length - 1 && <Separator />}
+                    </React.Fragment>
+                )) : (
+                     <div className="text-center text-muted-foreground py-4">No incoming stock.</div>
+                )}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+                <CardTitle className="text-red-700">Stock Out by Unit</CardTitle>
+                <CardDescription>Total items removed from inventory</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                {stockByUnit.filter(item => item.stockOut > 0).length > 0 ? stockByUnit.filter(item => item.stockOut > 0).map(({ unitName, stockOut }, index) => (
+                    <React.Fragment key={unitName}>
+                        <div className="flex justify-between items-center">
+                            <span className="font-medium">{unitName}</span>
+                            <span className="font-bold text-lg text-red-800">{stockOut.toFixed(2)}</span>
+                        </div>
+                        {index < stockByUnit.filter(item => item.stockOut > 0).length - 1 && <Separator />}
+                    </React.Fragment>
+                )) : (
+                    <div className="text-center text-muted-foreground py-4">No outgoing stock.</div>
+                )}
+            </CardContent>
+          </Card>
       </div>
 
        <div className="flex flex-col md:flex-row items-center gap-4 mb-4">
