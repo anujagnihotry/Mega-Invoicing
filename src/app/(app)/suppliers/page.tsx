@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { MoreHorizontal, PlusCircle, Search, Trash2, Pencil } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Search, Trash2, Pencil, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -47,7 +47,7 @@ function SuppliersTable({ suppliers, searchTerm }: { suppliers: Supplier[]; sear
                     filteredSuppliers.map((supplier) => (
                         <TableRow key={supplier.id}>
                             <TableCell className="font-medium">
-                                <Link href={`/suppliers/${supplier.id}/edit`} className="hover:underline text-primary">
+                                <Link href={`/suppliers/${supplier.id}/view`} className="hover:underline text-primary">
                                     {supplier.name}
                                 </Link>
                             </TableCell>
@@ -63,6 +63,9 @@ function SuppliersTable({ suppliers, searchTerm }: { suppliers: Supplier[]; sear
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent>
                                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                         <DropdownMenuItem onClick={() => router.push(`/suppliers/${supplier.id}/view`)}>
+                                            <Eye className="mr-2 h-4 w-4" /> View
+                                        </DropdownMenuItem>
                                         <DropdownMenuItem onClick={() => router.push(`/suppliers/${supplier.id}/edit`)}>
                                             <Pencil className="mr-2 h-4 w-4" /> Edit
                                         </DropdownMenuItem>
