@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -57,7 +58,7 @@ export default function EditPurchasePage() {
                 ...purchase,
                 orderDate: new Date(purchase.date),
                 expectedDeliveryDate: purchase.expectedDeliveryDate ? new Date(purchase.expectedDeliveryDate) : undefined,
-                items: purchase.items.map(item => ({...item}))
+                items: purchase.items,
             });
         }
     }, [purchase, form]);
@@ -88,7 +89,7 @@ export default function EditPurchasePage() {
           expectedDeliveryDate: values.expectedDeliveryDate?.toISOString(),
           notes: values.notes,
           status: values.status,
-          items: values.items.map(item => ({...item})), // Ensure a new array is created
+          items: values.items,
           totalAmount: totalAmount,
         };
 
@@ -329,5 +330,3 @@ export default function EditPurchasePage() {
         </div>
     );
 }
-
-    
