@@ -8,6 +8,8 @@ import useLocalStorage from '@/hooks/use-local-storage';
 import type { Invoice, AppSettings, Product, PurchaseOrder, Unit, Tax, Supplier, PurchaseEntry } from '@/lib/types';
 import { generateId } from '@/lib/utils';
 import { useUser } from '@/firebase';
+import { sendEmail } from '@/ai/flows/send-email';
+import { useToast } from '@/hooks/use-toast';
 
 const defaultSettings: AppSettings = {
   currency: 'USD',
@@ -38,6 +40,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [purchaseEntries, setPurchaseEntries] = useLocalStorage<PurchaseEntry[]>('purchaseEntries', []);
   const [units, setUnits] = useLocalStorage<Unit[]>('units', []);
   const [suppliers, setSuppliers] = useLocalStorage<Supplier[]>('suppliers', []);
+  const { toast } = useToast();
   
   const { user, isUserLoading } = useUser();
   const pathname = usePathname();
@@ -92,12 +95,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }
 
   const addInvoice = useCallback((invoiceData: Omit<Invoice, 'id' | 'currency' | 'taxAmount'>) => {
+    let newInvoice: Invoice | null = null;
     setProducts(prevProducts => {
       const newProducts = [...prevProducts];
       const invoiceId = generateId();
       const subtotal = invoiceData.items.reduce((acc, item) => acc + item.quantity * item.price, 0);
 
-      const newInvoice: Invoice = {
+      newInvoice = {
         ...invoiceData,
         id: invoiceId,
         currency: settings.currency,
@@ -114,10 +118,49 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           newProducts[productIndex].sales.push({ invoiceId: newInvoice.id, quantity: item.quantity });
         }
       }
-      setInvoices(prev => [...prev, newInvoice]);
+      setInvoices(prev => [...prev, newInvoice!]);
       return newProducts;
     });
-  }, [setInvoices, setProducts, settings.currency, settings.taxes]);
+
+    if (newInvoice && settings.email.sendOnNewInvoice) {
+      if (!settings.smtp.host || !settings.smtp.user || !settings.smtp.pass) {
+          toast({
+              variant: 'destructive',
+              title: 'Email Not Sent',
+              description: 'SMTP settings are not configured. Please configure them in Settings.',
+          });
+          return;
+      }
+
+      const emailHtml = `
+          <h1>New Invoice #${newInvoice.invoiceNumber}</h1>
+          <p>Dear ${newInvoice.clientName},</p>
+          <p>Here is your new invoice. Thank you for your business!</p>
+          <p>You can view the invoice by logging into your account.</p>
+          <p>Total Amount: ${newInvoice.items.reduce((acc, item) => acc + item.quantity * item.price, 0) + (newInvoice.taxAmount || 0)} ${newInvoice.currency}</p>
+      `;
+      
+      sendEmail({
+          to: newInvoice.clientEmail,
+          subject: `New Invoice from ${settings.companyProfile.name}`,
+          html: emailHtml,
+          smtpConfig: settings.smtp
+      }).then(() => {
+          toast({
+              title: 'Email Sent',
+              description: `Invoice sent to ${newInvoice?.clientEmail}.`,
+          });
+      }).catch(err => {
+           toast({
+              variant: 'destructive',
+              title: 'Email Failed',
+              description: 'Failed to send invoice email. Please check your SMTP settings.',
+          });
+          console.error(err);
+      })
+    }
+
+  }, [setInvoices, setProducts, settings, toast]);
 
 
   const updateInvoice = useCallback((updatedInvoiceData: Omit<Invoice, 'currency' | 'taxAmount'>) => {
