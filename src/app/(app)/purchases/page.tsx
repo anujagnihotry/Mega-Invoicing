@@ -37,13 +37,13 @@ const purchaseFormSchema = z.object({
 
 export default function PurchasePage() {
   const router = useRouter();
-  const { products, addPurchase, units, suppliers } = useApp();
+  const { products, addPurchase, units, suppliers, purchases } = useApp();
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof purchaseFormSchema>>({
     resolver: zodResolver(purchaseFormSchema),
     defaultValues: {
-      invoiceNumber: '',
+      invoiceNumber: `PO-${(purchases.length + 1).toString().padStart(4, '0')}`,
       supplierId: '',
       orderDate: new Date(),
       expectedDeliveryDate: undefined,
