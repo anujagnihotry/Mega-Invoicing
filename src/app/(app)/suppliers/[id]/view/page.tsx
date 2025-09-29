@@ -7,19 +7,22 @@ import { useEffect, useState, useMemo } from 'react';
 import type { Supplier, Purchase, PurchaseStatus } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Building, Mail, Phone, MapPin, PlusCircle, PackageOpen, MoreHorizontal } from 'lucide-react';
+import { Building, Mail, Phone, MapPin, PlusCircle, PackageOpen, MoreHorizontal, Eye, Pencil, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatCurrency, cn } from '@/lib/utils';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { useToast } from '@/hooks/use-toast';
 
 export default function ViewSupplierPage() {
     const router = useRouter();
     const params = useParams();
-    const { getSupplier, purchases, settings } = useApp();
+    const { getSupplier, purchases, settings, deletePurchase } = useApp();
     const [supplier, setSupplier] = useState<Supplier | undefined>(undefined);
     const [loading, setLoading] = useState(true);
+    const { toast } = useToast();
 
     const supplierId = params.id as string;
 
@@ -29,7 +32,6 @@ export default function ViewSupplierPage() {
             if (foundSupplier) {
                 setSupplier(foundSupplier);
             } else {
-                // Keep the router.replace for safety, but the initial check should handle it
                 router.replace('/suppliers');
             }
         }
@@ -52,6 +54,11 @@ export default function ViewSupplierPage() {
             default:
                 return 'bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-100/80';
         }
+    };
+
+    const handleDeletePurchase = (purchaseId: string) => {
+        deletePurchase(purchaseId);
+        toast({ title: "Purchase Order Deleted", description: "The purchase order has been successfully deleted." });
     };
 
     if (loading) {
@@ -162,7 +169,34 @@ export default function ViewSupplierPage() {
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent>
-                                                    <DropdownMenuItem>View Details</DropdownMenuItem>
+                                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                    <DropdownMenuItem onClick={() => router.push(`/purchases/${purchase.id}/view`)}>
+                                                        <Eye className="mr-2 h-4 w-4" /> View
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => router.push(`/purchases/${purchase.id}/edit`)}>
+                                                        <Pencil className="mr-2 h-4 w-4" /> Edit
+                                                    </DropdownMenuItem>
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild>
+                                                             <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
+                                                                <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                                            </DropdownMenuItem>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent>
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                                <AlertDialogDescription>
+                                                                    This action cannot be undone. This will permanently delete the purchase order.
+                                                                </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                <AlertDialogAction onClick={() => handleDeletePurchase(purchase.id)}>
+                                                                    Delete
+                                                                </AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </TableCell>

@@ -194,6 +194,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setPurchases(prev => [...prev, newPurchase]);
   }, [setPurchases]);
   
+  const updatePurchase = useCallback((purchase: Purchase) => {
+    setPurchases(prev => prev.map(p => p.id === purchase.id ? purchase : p));
+  }, [setPurchases]);
+
+  const deletePurchase = useCallback((purchaseId: string) => {
+    setPurchases(prev => prev.filter(p => p.id !== purchaseId));
+  }, [setPurchases]);
+
   const addUnit = useCallback((unit: Unit) => {
     setUnits(prev => [...prev, unit]);
   }, [setUnits]);
@@ -247,6 +255,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     addProduct: addProduct as any,
     purchases,
     addPurchase: addPurchase as any,
+    updatePurchase,
+    deletePurchase,
     units,
     addUnit,
     getAvailableStock,

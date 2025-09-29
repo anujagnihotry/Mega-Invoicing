@@ -13,6 +13,8 @@ export interface AppContextType {
   updateSettings: (newSettings: Partial<Omit<AppSettings, 'taxes'>>) => void;
   products: Product[];
   addPurchase: (purchase: Omit<Purchase, 'id' | 'status'>) => void;
+  updatePurchase: (purchase: Purchase) => void;
+  deletePurchase: (purchaseId: string) => void;
   addProduct: (product: Omit<Product, 'id' | 'sales'>) => void;
   purchases: Purchase[];
   units: Unit[];
