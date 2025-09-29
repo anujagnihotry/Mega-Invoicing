@@ -4,14 +4,15 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useApp } from '@/hooks/use-app';
 import { useEffect, useState, useMemo } from 'react';
-import type { Supplier, Purchase } from '@/lib/types';
+import type { Supplier, Purchase, PurchaseStatus } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Building, Mail, Phone, MapPin, PlusCircle, PackageOpen, MoreHorizontal } from 'lucide-react';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
 
 export default function ViewSupplierPage() {
     const router = useRouter();
@@ -39,6 +40,19 @@ export default function ViewSupplierPage() {
         if (!supplier) return [];
         return purchases.filter(p => p.supplierId === supplier.id);
     }, [purchases, supplier]);
+
+    const getStatusBadgeVariant = (status: PurchaseStatus) => {
+        switch (status) {
+            case 'Pending':
+                return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+            case 'Completed':
+                return 'bg-green-100 text-green-800 border-green-200';
+            case 'Cancelled':
+                return 'bg-red-100 text-red-800 border-red-200';
+            default:
+                return 'bg-gray-100 text-gray-800 border-gray-200';
+        }
+    };
 
     if (loading) {
         return (
@@ -136,8 +150,9 @@ export default function ViewSupplierPage() {
                                         <TableCell>{new Date(purchase.date).toLocaleDateString()}</TableCell>
                                         <TableCell>{formatCurrency(purchase.totalAmount, settings.currency)}</TableCell>
                                         <TableCell>
-                                            {/* Status logic to be implemented */}
-                                            <span className="text-green-600 bg-green-100 px-2 py-1 rounded-full text-xs">Completed</span>
+                                            <Badge className={cn(getStatusBadgeVariant(purchase.status))}>
+                                                {purchase.status}
+                                            </Badge>
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <DropdownMenu>

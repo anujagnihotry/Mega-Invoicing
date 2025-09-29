@@ -10,9 +10,9 @@ export interface AppContextType {
   getInvoice: (id: string) => Invoice | undefined;
   deleteInvoice: (id: string) => void;
   settings: AppSettings;
-  updateSettings: (newSettings: Partial<Omit<AppSettings, 'taxes'>> & { taxes?: Tax[] }) => void;
+  updateSettings: (newSettings: Partial<Omit<AppSettings, 'taxes'>>) => void;
   products: Product[];
-  addPurchase: (purchase: Purchase) => void;
+  addPurchase: (purchase: Omit<Purchase, 'id' | 'status'>) => void;
   addProduct: (product: Omit<Product, 'id' | 'sales'>) => void;
   purchases: Purchase[];
   units: Unit[];

@@ -1,6 +1,7 @@
 
 
 
+
 export type LineItem = {
   id: string;
   productId: string; // Link to the product
@@ -75,6 +76,8 @@ export type Product = {
   taxPercent?: number;
 };
 
+export type PurchaseStatus = 'Pending' | 'Completed' | 'Cancelled';
+
 export type Purchase = {
   id: string;
   invoiceNumber: string;
@@ -90,6 +93,7 @@ export type Purchase = {
     price: number;
   }[];
   totalAmount: number;
+  status: PurchaseStatus;
 };
 
 export type Supplier = {
@@ -99,3 +103,4 @@ export type Supplier = {
   phone: string;
   address: string;
 };
+

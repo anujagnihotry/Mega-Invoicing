@@ -66,8 +66,7 @@ export default function PurchasePage() {
         return;
     }
 
-    const purchaseData: Purchase = {
-      id: generateId(),
+    const purchaseData: Omit<Purchase, 'id' | 'status'> = {
       invoiceNumber: values.invoiceNumber,
       supplierId: values.supplierId,
       vendorName: supplier.name, // Keep for backward compatibility for now
