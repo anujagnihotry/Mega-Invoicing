@@ -5,12 +5,9 @@ import { useParams } from 'next/navigation';
 import { useApp } from '@/hooks/use-app';
 import { useEffect, useState } from 'react';
 import type { Purchase } from '@/lib/types';
-import { Button } from '@/components/ui/button';
-import { Printer } from 'lucide-react';
-import Link from 'next/link';
 import { PurchaseOrderDisplay } from '@/components/purchase-order-display';
 
-export default function ViewPurchasePage() {
+export default function PrintPurchaseOrderPage() {
   const params = useParams();
   const { purchases, settings, products, units, suppliers } = useApp();
   const [purchase, setPurchase] = useState<Purchase | undefined>(undefined);
@@ -23,9 +20,16 @@ export default function ViewPurchasePage() {
     }
   }, [params.id, purchases]);
   
+  useEffect(() => {
+    if (purchase) {
+      // Small timeout to allow everything to render before printing
+      setTimeout(() => window.print(), 500);
+    }
+  }, [purchase]);
+
   if (!purchase) {
     return (
-      <div className="flex h-[50vh] w-full items-center justify-center no-print">
+      <div className="flex h-screen w-full items-center justify-center">
         <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
@@ -33,21 +37,5 @@ export default function ViewPurchasePage() {
   
   const supplier = suppliers.find(s => s.id === purchase.supplierId);
 
-  return (
-    <div className="print-container">
-      <div className="flex items-center mb-4 no-print">
-         <h1 className="font-semibold text-lg md:text-2xl">Purchase Order {purchase.invoiceNumber}</h1>
-         <div className="ml-auto">
-            <Button asChild>
-                <Link href={`/purchases/${purchase.id}/print`} target="_blank">
-                    <Printer className="mr-2 h-4 w-4" />
-                    Print / Download PDF
-                </Link>
-            </Button>
-          </div>
-      </div>
-      <PurchaseOrderDisplay purchase={purchase} settings={settings} products={products} units={units} supplier={supplier} />
-    </div>
-  );
+  return <PurchaseOrderDisplay purchase={purchase} settings={settings} products={products} units={units} supplier={supplier} />;
 }
-
