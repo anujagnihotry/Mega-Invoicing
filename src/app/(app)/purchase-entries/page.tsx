@@ -26,7 +26,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useApp } from '@/hooks/use-app';
 import { useToast } from '@/hooks/use-toast';
-import { PurchaseEntryStatus } from '@/lib/types';
+import { PurchaseEntryStatus, PurchaseOrder } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { PlusCircle, Trash2, CalendarIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -50,7 +50,7 @@ const purchaseEntrySchema = z.object({
 
 export default function NewPurchaseEntryPage() {
   const router = useRouter();
-  const { products, suppliers, addPurchaseEntry } = useApp();
+  const { products, suppliers, addPurchaseEntry, purchaseOrders } = useApp();
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof purchaseEntrySchema>>({
@@ -64,10 +64,35 @@ export default function NewPurchaseEntryPage() {
     },
   });
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, replace } = useFieldArray({
     control: form.control,
     name: 'items',
   });
+  
+  const watchedSupplierId = form.watch('supplierId');
+  const watchedPurchaseOrderId = form.watch('purchaseOrderId');
+
+  const availablePurchaseOrders = React.useMemo(() => {
+    if (!watchedSupplierId) return [];
+    return purchaseOrders
+      .filter(po => po.supplierId === watchedSupplierId && (po.status === 'Pending' || po.status === 'Partially Fulfilled'))
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [watchedSupplierId, purchaseOrders]);
+
+  React.useEffect(() => {
+    if (watchedPurchaseOrderId) {
+      const selectedPO = purchaseOrders.find(po => po.id === watchedPurchaseOrderId);
+      if (selectedPO) {
+        const newItems = selectedPO.items.map(item => ({
+          productId: item.productId,
+          quantityReceived: item.quantity,
+        }));
+        replace(newItems);
+      }
+    } else {
+      replace([]); // Clear items if no PO is selected
+    }
+  }, [watchedPurchaseOrderId, purchaseOrders, replace]);
 
   const onSubmit = (values: z.infer<typeof purchaseEntrySchema>) => {
     addPurchaseEntry({
@@ -115,14 +140,17 @@ export default function NewPurchaseEntryPage() {
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid md:grid-cols-3 gap-4">
             <FormField
               control={form.control}
               name="supplierId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Supplier</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select onValueChange={(value) => {
+                      field.onChange(value);
+                      form.setValue('purchaseOrderId', ''); // Reset PO when supplier changes
+                  }} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select a supplier" />
@@ -138,6 +166,30 @@ export default function NewPurchaseEntryPage() {
                 </FormItem>
               )}
             />
+            {watchedSupplierId && (
+              <FormField
+                control={form.control}
+                name="purchaseOrderId"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Purchase Order (Optional)</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Import from a PO..." />
+                        </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                        {availablePurchaseOrders.map((po: PurchaseOrder) => (
+                            <SelectItem key={po.id} value={po.id}>{po.poNumber} - {new Date(po.date).toLocaleDateString()}</SelectItem>
+                        ))}
+                        </SelectContent>
+                    </Select>
+                    <FormMessage />
+                    </FormItem>
+                )}
+              />
+            )}
             <FormField
               control={form.control}
               name="entryDate"
