@@ -19,6 +19,15 @@ const defaultSettings: AppSettings = {
   },
   defaultTaxRule: 'per-item',
   taxes: [],
+  smtp: {
+    host: '',
+    port: 587,
+    user: '',
+    pass: ''
+  },
+  email: {
+    sendOnNewInvoice: false,
+  }
 };
 
 export function AppProvider({ children }: { children: React.ReactNode }) {

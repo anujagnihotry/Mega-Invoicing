@@ -19,6 +19,7 @@ import { MoreHorizontal, PlusCircle, Trash2, Pencil } from 'lucide-react';
 import type { AppSettings, Tax } from '@/lib/types';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Switch } from '@/components/ui/switch';
 
 const currencies = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'INR'];
 
@@ -30,6 +31,15 @@ const settingsSchema = z.object({
     phone: z.string().min(1, 'Phone number is required'),
     taxNumber: z.string().optional(),
   }),
+  smtp: z.object({
+      host: z.string().min(1, 'SMTP Host is required'),
+      port: z.coerce.number().gt(0, 'Port must be a positive number'),
+      user: z.string().min(1, 'SMTP User is required'),
+      pass: z.string().min(1, 'SMTP Password is required'),
+  }),
+  email: z.object({
+      sendOnNewInvoice: z.boolean(),
+  })
 });
 
 const taxFormSchema = z.object({
@@ -73,7 +83,7 @@ export default function SettingsPage() {
     updateSettings(values);
     toast({
       title: 'Settings Saved',
-      description: 'Your company profile and currency have been saved.',
+      description: 'Your application settings have been saved.',
     });
   };
   
@@ -208,6 +218,89 @@ export default function SettingsPage() {
                   </CardContent>
               </Card>
           </div>
+          
+           <Card className="lg:col-span-3">
+                <CardHeader>
+                    <CardTitle>SMTP Configuration</CardTitle>
+                    <CardDescription>Configure your email server to send invoices and notifications.</CardDescription>
+                </CardHeader>
+                <CardContent className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <FormField
+                        control={form.control}
+                        name="smtp.host"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>SMTP Host</FormLabel>
+                                <FormControl><Input placeholder="smtp.example.com" {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="smtp.port"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>SMTP Port</FormLabel>
+                                <FormControl><Input type="number" placeholder="587" {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="smtp.user"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>SMTP Username</FormLabel>
+                                <FormControl><Input placeholder="user@example.com" {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="smtp.pass"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>SMTP Password</FormLabel>
+                                <FormControl><Input type="password" {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </CardContent>
+            </Card>
+
+            <Card className="lg:col-span-3">
+                <CardHeader>
+                    <CardTitle>Email Notifications</CardTitle>
+                    <CardDescription>Manage automated email settings.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <FormField
+                        control={form.control}
+                        name="email.sendOnNewInvoice"
+                        render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                <div className="space-y-0.5">
+                                    <FormLabel className="text-base">Send Email on New Invoice</FormLabel>
+                                    <p className="text-sm text-muted-foreground">
+                                        Automatically send an email to the client when a new invoice is created.
+                                    </p>
+                                </div>
+                                <FormControl>
+                                    <Switch
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                    />
+                                </FormControl>
+                            </FormItem>
+                        )}
+                    />
+                </CardContent>
+            </Card>
+
           <div className="flex justify-end">
              <Button type="submit">Save Changes</Button>
           </div>

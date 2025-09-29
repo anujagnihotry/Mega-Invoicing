@@ -46,12 +46,25 @@ export type Tax = {
     rate: number; // Percentage
 };
 
+export type SMTPSettings = {
+  host: string;
+  port: number;
+  user: string;
+  pass: string;
+};
+
+export type EmailSettings = {
+  sendOnNewInvoice: boolean;
+};
+
 export type AppSettings = {
   currency: string;
   companyProfile: CompanyProfile;
   defaultTaxRule: 'per-item' | 'per-bill';
   globalTaxPercent?: number;
   taxes: Tax[];
+  smtp: SMTPSettings;
+  email: EmailSettings;
 };
 
 export type Unit = {
