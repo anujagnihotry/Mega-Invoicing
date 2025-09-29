@@ -150,7 +150,7 @@ export default function ViewSupplierPage() {
                                         <TableCell>{new Date(purchase.date).toLocaleDateString()}</TableCell>
                                         <TableCell>{formatCurrency(purchase.totalAmount, settings.currency)}</TableCell>
                                         <TableCell>
-                                            <Badge variant="outline" className={cn(getStatusBadgeClass(purchase.status))}>
+                                            <Badge className={cn(getStatusBadgeClass(purchase.status))}>
                                                 {purchase.status}
                                             </Badge>
                                         </TableCell>
