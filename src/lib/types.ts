@@ -1,5 +1,6 @@
 
 
+
 export type LineItem = {
   id: string;
   productId: string; // Link to the product
@@ -80,6 +81,9 @@ export type Purchase = {
   date: string;
   vendorName: string;
   vendorContact?: string;
+  supplierId: string;
+  expectedDeliveryDate?: string;
+  notes?: string;
   items: {
     productId: string;
     quantity: number;

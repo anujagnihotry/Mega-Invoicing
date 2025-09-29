@@ -185,8 +185,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setProducts(prev => [...prev, newProduct]);
   }, [setProducts]);
 
-  const addPurchase = useCallback((purchase: Purchase) => {
-    setPurchases(prev => [...prev, purchase]);
+  const addPurchase = useCallback((purchase: Omit<Purchase, 'id'>) => {
+    const newPurchase: Purchase = {
+      id: generateId(),
+      ...purchase
+    }
+    setPurchases(prev => [...prev, newPurchase]);
     
     // Note: We no longer directly update product.quantity from purchases.
     // The available stock is now a calculated value.
@@ -244,7 +248,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     products,
     addProduct: addProduct as any,
     purchases,
-    addPurchase,
+    addPurchase: addPurchase as any,
     units,
     addUnit,
     getAvailableStock,

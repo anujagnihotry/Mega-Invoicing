@@ -37,9 +37,7 @@ export default function ViewSupplierPage() {
 
     const supplierPurchases = useMemo(() => {
         if (!supplier) return [];
-        // This assumes vendorName in purchases matches supplier.name. 
-        // A more robust solution would be to use a supplierId in the Purchase object.
-        return purchases.filter(p => p.vendorName === supplier.name);
+        return purchases.filter(p => p.supplierId === supplier.id);
     }, [purchases, supplier]);
 
     if (loading) {
@@ -172,4 +170,3 @@ export default function ViewSupplierPage() {
         </div>
     );
 }
-
