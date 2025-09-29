@@ -1,4 +1,3 @@
-
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -51,16 +50,18 @@ export default function EditPurchasePage() {
             items: [],
         },
     });
-
+    
     useEffect(() => {
         if (purchase) {
             form.reset({
                 ...purchase,
                 orderDate: new Date(purchase.date),
                 expectedDeliveryDate: purchase.expectedDeliveryDate ? new Date(purchase.expectedDeliveryDate) : undefined,
+                items: purchase.items.map(item => ({...item}))
             });
         }
     }, [purchase, form]);
+
 
     const { fields, append, remove } = useFieldArray({
         control: form.control,
@@ -87,7 +88,7 @@ export default function EditPurchasePage() {
           expectedDeliveryDate: values.expectedDeliveryDate?.toISOString(),
           notes: values.notes,
           status: values.status,
-          items: values.items,
+          items: values.items.map(item => ({...item})), // Ensure a new array is created
           totalAmount: totalAmount,
         };
 
@@ -329,5 +330,4 @@ export default function EditPurchasePage() {
     );
 }
 
-    
     
