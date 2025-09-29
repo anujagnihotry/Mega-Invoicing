@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, FileText, Settings, Warehouse, ShoppingCart, Ruler } from 'lucide-react';
+import { LayoutDashboard, FileText, Settings, Warehouse, ShoppingCart, Ruler, History } from 'lucide-react';
 import { APP_NAME } from '@/lib/constants';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from './ui/tooltip';
 
@@ -33,7 +33,13 @@ export function MainNav({ isCollapsed }: { isCollapsed: boolean }) {
       href: '/inventory',
       label: 'Inventory',
       icon: Warehouse,
-      isActive: pathname.startsWith('/inventory'),
+      isActive: pathname === '/inventory',
+    },
+    {
+        href: '/inventory/item-tracking',
+        label: 'Item Tracking',
+        icon: History,
+        isActive: pathname === '/inventory/item-tracking',
     },
     {
       href: '/purchases',
