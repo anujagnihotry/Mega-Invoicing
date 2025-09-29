@@ -44,13 +44,13 @@ export default function ViewSupplierPage() {
     const getStatusBadgeVariant = (status: PurchaseStatus) => {
         switch (status) {
             case 'Pending':
-                return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+                return 'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-100';
             case 'Completed':
-                return 'bg-green-100 text-green-800 border-green-200';
+                return 'bg-green-100 text-green-800 border-green-200 hover:bg-green-100';
             case 'Cancelled':
-                return 'bg-red-100 text-red-800 border-red-200';
+                return 'bg-red-100 text-red-800 border-red-200 hover:bg-red-100';
             default:
-                return 'bg-gray-100 text-gray-800 border-gray-200';
+                return 'bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-100';
         }
     };
 
@@ -150,7 +150,7 @@ export default function ViewSupplierPage() {
                                         <TableCell>{new Date(purchase.date).toLocaleDateString()}</TableCell>
                                         <TableCell>{formatCurrency(purchase.totalAmount, settings.currency)}</TableCell>
                                         <TableCell>
-                                            <Badge className={cn(getStatusBadgeVariant(purchase.status))}>
+                                            <Badge variant="outline" className={cn(getStatusBadgeVariant(purchase.status))}>
                                                 {purchase.status}
                                             </Badge>
                                         </TableCell>
