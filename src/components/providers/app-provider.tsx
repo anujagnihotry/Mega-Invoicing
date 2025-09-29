@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { AppContext, AppContextType } from '@/contexts/app-context';
 import useLocalStorage from '@/hooks/use-local-storage';
-import type { Invoice, AppSettings, Product, Purchase, Unit, Tax } from '@/lib/types';
+import type { Invoice, AppSettings, Product, Purchase, Unit, Tax, Supplier } from '@/lib/types';
 import { generateId } from '@/lib/utils';
 import { useUser } from '@/firebase';
 
@@ -27,6 +27,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [products, setProducts] = useLocalStorage<Product[]>('products', []);
   const [purchases, setPurchases] = useLocalStorage<Purchase[]>('purchases', []);
   const [units, setUnits] = useLocalStorage<Unit[]>('units', []);
+  const [suppliers, setSuppliers] = useLocalStorage<Supplier[]>('suppliers', []);
   
   const { user, isUserLoading } = useUser();
   const pathname = usePathname();
@@ -46,6 +47,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const getInvoice = useCallback((id: string): Invoice | undefined => {
     return invoices.find(invoice => invoice.id === id);
   }, [invoices]);
+
+  const getSupplier = useCallback((id: string): Supplier | undefined => {
+    return suppliers.find(supplier => supplier.id === id);
+    }, [suppliers]);
 
   const getAvailableStock = useCallback((productId: string, currentInvoiceId?: string) => {
     const product = products.find(p => p.id === productId);
@@ -212,6 +217,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         return { ...prev, taxes: updatedTaxes };
     });
   }, [setSettings]);
+  
+  const addSupplier = useCallback((supplier: Omit<Supplier, 'id'>) => {
+    const newSupplier: Supplier = { id: generateId(), ...supplier };
+    setSuppliers(prev => [...prev, newSupplier]);
+  }, [setSuppliers]);
+
+  const updateSupplier = useCallback((supplier: Supplier) => {
+    setSuppliers(prev => prev.map(s => s.id === supplier.id ? supplier : s));
+  }, [setSuppliers]);
+
+  const deleteSupplier = useCallback((supplierId: string) => {
+    setSuppliers(prev => prev.filter(s => s.id !== supplierId));
+  }, [setSuppliers]);
 
 
   const contextValue: AppContextType = {
@@ -232,7 +250,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     getAvailableStock,
     addTax,
     updateTax,
-    deleteTax
+    deleteTax,
+    suppliers,
+    addSupplier,
+    updateSupplier,
+    deleteSupplier,
+    getSupplier
   };
   
   if (isUserLoading) {
