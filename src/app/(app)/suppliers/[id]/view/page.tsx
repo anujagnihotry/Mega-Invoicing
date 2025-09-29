@@ -4,7 +4,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useApp } from '@/hooks/use-app';
 import { useEffect, useState, useMemo } from 'react';
-import type { Supplier, Purchase, PurchaseStatus } from '@/lib/types';
+import type { Supplier, PurchaseOrder, PurchaseOrderStatus } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Building, Mail, Phone, MapPin, PlusCircle, PackageOpen, MoreHorizontal, Eye, Pencil, Trash2 } from 'lucide-react';
@@ -19,7 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 export default function ViewSupplierPage() {
     const router = useRouter();
     const params = useParams();
-    const { getSupplier, purchases, settings, deletePurchase } = useApp();
+    const { getSupplier, purchaseOrders, settings, deletePurchaseOrder } = useApp();
     const [supplier, setSupplier] = useState<Supplier | undefined>(undefined);
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
@@ -38,26 +38,13 @@ export default function ViewSupplierPage() {
         setLoading(false);
     }, [supplierId, getSupplier, router]);
 
-    const supplierPurchases = useMemo(() => {
+    const supplierPurchaseOrders = useMemo(() => {
         if (!supplier) return [];
-        return purchases.filter(p => p.supplierId === supplier.id);
-    }, [purchases, supplier]);
+        return purchaseOrders.filter(p => p.supplierId === supplier.id);
+    }, [purchaseOrders, supplier]);
 
-    const getStatusBadgeClass = (status: PurchaseStatus) => {
-        switch (status) {
-            case 'Pending':
-                return 'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-100/80';
-            case 'Completed':
-                return 'bg-green-100 text-green-800 border-green-200 hover:bg-green-100/80';
-            case 'Cancelled':
-                return 'bg-red-100 text-red-800 border-red-200 hover:bg-red-100/80';
-            default:
-                return 'bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-100/80';
-        }
-    };
-
-    const handleDeletePurchase = (purchaseId: string) => {
-        deletePurchase(purchaseId);
+    const handleDeletePurchaseOrder = (purchaseOrderId: string) => {
+        deletePurchaseOrder(purchaseOrderId);
         toast({ title: "Purchase Order Deleted", description: "The purchase order has been successfully deleted." });
     };
 
@@ -150,22 +137,23 @@ export default function ViewSupplierPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {supplierPurchases.length > 0 ? (
-                                supplierPurchases.map((purchase: Purchase) => (
-                                    <TableRow key={purchase.id}>
-                                        <TableCell className="font-medium">{purchase.invoiceNumber}</TableCell>
-                                        <TableCell>{new Date(purchase.date).toLocaleDateString()}</TableCell>
-                                        <TableCell>{formatCurrency(purchase.totalAmount, settings.currency)}</TableCell>
+                            {supplierPurchaseOrders.length > 0 ? (
+                                supplierPurchaseOrders.map((po: PurchaseOrder) => (
+                                    <TableRow key={po.id}>
+                                        <TableCell className="font-medium">{po.poNumber}</TableCell>
+                                        <TableCell>{new Date(po.date).toLocaleDateString()}</TableCell>
+                                        <TableCell>{formatCurrency(po.totalAmount, settings.currency)}</TableCell>
                                         <TableCell>
                                             <Badge className={cn(
                                                 {
-                                                'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-100/80': purchase.status === 'Pending',
-                                                'bg-green-100 text-green-800 border-green-200 hover:bg-green-100/80': purchase.status === 'Completed',
-                                                'bg-red-100 text-red-800 border-red-200 hover:bg-red-100/80': purchase.status === 'Cancelled',
-                                                'bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-100/80': !purchase.status
+                                                'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-100/80': po.status === 'Pending',
+                                                'bg-green-100 text-green-800 border-green-200 hover:bg-green-100/80': po.status === 'Completed',
+                                                'bg-red-100 text-red-800 border-red-200 hover:bg-red-100/80': po.status === 'Cancelled',
+                                                 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-100/80': po.status === 'Partially Fulfilled',
+                                                'bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-100/80': !po.status
                                                 }
                                             )}>
-                                                {purchase.status}
+                                                {po.status}
                                             </Badge>
                                         </TableCell>
                                         <TableCell className="text-right">
@@ -177,10 +165,10 @@ export default function ViewSupplierPage() {
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent>
                                                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                    <DropdownMenuItem onClick={() => router.push(`/purchases/${purchase.id}/view`)}>
+                                                    <DropdownMenuItem onClick={() => router.push(`/purchases/${po.id}/view`)}>
                                                         <Eye className="mr-2 h-4 w-4" /> View
                                                     </DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => router.push(`/purchases/${purchase.id}/edit`)}>
+                                                    <DropdownMenuItem onClick={() => router.push(`/purchases/${po.id}/edit`)}>
                                                         <Pencil className="mr-2 h-4 w-4" /> Edit
                                                     </DropdownMenuItem>
                                                     <AlertDialog>
@@ -198,7 +186,7 @@ export default function ViewSupplierPage() {
                                                             </AlertDialogHeader>
                                                             <AlertDialogFooter>
                                                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                <AlertDialogAction onClick={() => handleDeletePurchase(purchase.id)}>
+                                                                <AlertDialogAction onClick={() => handleDeletePurchaseOrder(po.id)}>
                                                                     Delete
                                                                 </AlertDialogAction>
                                                             </AlertDialogFooter>

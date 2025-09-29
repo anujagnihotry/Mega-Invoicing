@@ -1,10 +1,10 @@
+
 'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, FileText, Settings, Warehouse, ShoppingCart, Ruler, History, Users } from 'lucide-react';
-import { APP_NAME } from '@/lib/constants';
+import { LayoutDashboard, FileText, Settings, Warehouse, ShoppingCart, Ruler, History, Users, Truck } from 'lucide-react';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from './ui/tooltip';
 
 export function MainNav({ isCollapsed }: { isCollapsed: boolean }) {
@@ -43,9 +43,15 @@ export function MainNav({ isCollapsed }: { isCollapsed: boolean }) {
     },
     {
       href: '/purchases',
-      label: 'Purchases',
+      label: 'Purchase Orders',
       icon: ShoppingCart,
       isActive: pathname.startsWith('/purchases'),
+    },
+    {
+      href: '/purchase-entries',
+      label: 'Purchase Entries',
+      icon: Truck,
+      isActive: pathname.startsWith('/purchase-entries'),
     },
      {
       href: '/suppliers',

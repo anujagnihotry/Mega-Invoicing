@@ -4,26 +4,26 @@
 import { useParams } from 'next/navigation';
 import { useApp } from '@/hooks/use-app';
 import { useEffect, useState } from 'react';
-import type { Purchase } from '@/lib/types';
+import type { PurchaseOrder } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Printer } from 'lucide-react';
 import Link from 'next/link';
 import { PurchaseOrderDisplay } from '@/components/purchase-order-display';
 
-export default function ViewPurchasePage() {
+export default function ViewPurchaseOrderPage() {
   const params = useParams();
-  const { purchases, settings, products, units, suppliers } = useApp();
-  const [purchase, setPurchase] = useState<Purchase | undefined>(undefined);
+  const { purchaseOrders, settings, products, units, suppliers } = useApp();
+  const [purchaseOrder, setPurchaseOrder] = useState<PurchaseOrder | undefined>(undefined);
 
   useEffect(() => {
-    const purchaseId = params.id as string;
-    if (purchaseId) {
-      const foundPurchase = purchases.find(p => p.id === purchaseId);
-      setPurchase(foundPurchase);
+    const purchaseOrderId = params.id as string;
+    if (purchaseOrderId) {
+      const foundPurchase = purchaseOrders.find(p => p.id === purchaseOrderId);
+      setPurchaseOrder(foundPurchase);
     }
-  }, [params.id, purchases]);
+  }, [params.id, purchaseOrders]);
   
-  if (!purchase) {
+  if (!purchaseOrder) {
     return (
       <div className="flex h-[50vh] w-full items-center justify-center no-print">
         <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -31,23 +31,22 @@ export default function ViewPurchasePage() {
     );
   }
   
-  const supplier = suppliers.find(s => s.id === purchase.supplierId);
+  const supplier = suppliers.find(s => s.id === purchaseOrder.supplierId);
 
   return (
     <div className="print-container">
       <div className="flex items-center mb-4 no-print">
-         <h1 className="font-semibold text-lg md:text-2xl">Purchase Order {purchase.invoiceNumber}</h1>
+         <h1 className="font-semibold text-lg md:text-2xl">Purchase Order {purchaseOrder.poNumber}</h1>
          <div className="ml-auto">
             <Button asChild>
-                <Link href={`/purchases/${purchase.id}/print`} target="_blank">
+                <Link href={`/purchases/${purchaseOrder.id}/print`} target="_blank">
                     <Printer className="mr-2 h-4 w-4" />
                     Print / Download PDF
                 </Link>
             </Button>
           </div>
       </div>
-      <PurchaseOrderDisplay purchase={purchase} settings={settings} products={products} units={units} supplier={supplier} />
+      <PurchaseOrderDisplay purchaseOrder={purchaseOrder} settings={settings} products={products} units={units} supplier={supplier} />
     </div>
   );
 }
-

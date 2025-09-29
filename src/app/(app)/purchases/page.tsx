@@ -1,6 +1,6 @@
 
-import { PurchaseForm } from '@/components/purchase-form';
+import { PurchaseOrderForm } from '@/components/purchase-order-form';
 
-export default function NewPurchasePage() {
-  return <PurchaseForm />;
+export default function NewPurchaseOrderPage() {
+  return <PurchaseOrderForm />;
 }

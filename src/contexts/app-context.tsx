@@ -1,6 +1,6 @@
 
 import { createContext } from 'react';
-import type { Invoice, AppSettings, Product, Purchase, Unit, Tax, Supplier } from '@/lib/types';
+import type { Invoice, AppSettings, Product, PurchaseOrder, Unit, Tax, Supplier, PurchaseEntry } from '@/lib/types';
 
 export interface AppContextType {
   isLoading: boolean;
@@ -12,12 +12,12 @@ export interface AppContextType {
   settings: AppSettings;
   updateSettings: (newSettings: Partial<Omit<AppSettings, 'taxes'>>) => void;
   products: Product[];
-  addPurchase: (purchase: Omit<Purchase, 'id'>) => void;
-  updatePurchase: (purchase: Purchase) => void;
-  deletePurchase: (purchaseId: string) => void;
-  getPurchase: (id: string) => Purchase | undefined;
+  purchaseOrders: PurchaseOrder[];
+  addPurchaseOrder: (purchaseOrder: Omit<PurchaseOrder, 'id'>) => void;
+  updatePurchaseOrder: (purchaseOrder: PurchaseOrder) => void;
+  deletePurchaseOrder: (purchaseOrderId: string) => void;
+  getPurchaseOrder: (id: string) => PurchaseOrder | undefined;
   addProduct: (product: Omit<Product, 'id' | 'sales'>) => void;
-  purchases: Purchase[];
   units: Unit[];
   addUnit: (unit: Unit) => void;
   getAvailableStock: (productId: string, currentInvoiceId?: string) => number;
@@ -29,6 +29,8 @@ export interface AppContextType {
   updateSupplier: (supplier: Supplier) => void;
   deleteSupplier: (supplierId: string) => void;
   getSupplier: (id: string) => Supplier | undefined;
+  purchaseEntries: PurchaseEntry[];
+  addPurchaseEntry: (purchaseEntry: Omit<PurchaseEntry, 'id'>) => void;
 }
 
 export const AppContext = createContext<AppContextType | undefined>(undefined);

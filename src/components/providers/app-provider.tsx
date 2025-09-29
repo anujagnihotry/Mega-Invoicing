@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { AppContext, AppContextType } from '@/contexts/app-context';
 import useLocalStorage from '@/hooks/use-local-storage';
-import type { Invoice, AppSettings, Product, Purchase, Unit, Tax, Supplier } from '@/lib/types';
+import type { Invoice, AppSettings, Product, PurchaseOrder, Unit, Tax, Supplier, PurchaseEntry } from '@/lib/types';
 import { generateId } from '@/lib/utils';
 import { useUser } from '@/firebase';
 
@@ -25,7 +25,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [invoices, setInvoices] = useLocalStorage<Invoice[]>('invoices', []);
   const [settings, setSettings] = useLocalStorage<AppSettings>('settings', defaultSettings);
   const [products, setProducts] = useLocalStorage<Product[]>('products', []);
-  const [purchases, setPurchases] = useLocalStorage<Purchase[]>('purchases', []);
+  const [purchaseOrders, setPurchaseOrders] = useLocalStorage<PurchaseOrder[]>('purchaseOrders', []);
+  const [purchaseEntries, setPurchaseEntries] = useLocalStorage<PurchaseEntry[]>('purchaseEntries', []);
   const [units, setUnits] = useLocalStorage<Unit[]>('units', []);
   const [suppliers, setSuppliers] = useLocalStorage<Supplier[]>('suppliers', []);
   
@@ -52,27 +53,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return suppliers.find(supplier => supplier.id === id);
   }, [suppliers]);
   
-  const getPurchase = useCallback((id: string): Purchase | undefined => {
-    return purchases.find(p => p.id === id);
-  }, [purchases]);
+  const getPurchaseOrder = useCallback((id: string): PurchaseOrder | undefined => {
+    return purchaseOrders.find(p => p.id === id);
+  }, [purchaseOrders]);
 
   const getAvailableStock = useCallback((productId: string, currentInvoiceId?: string) => {
     const product = products.find(p => p.id === productId);
     if (!product) return 0;
 
-    const stockFromPurchases = purchases
-      .filter(p => p.status === 'Completed') // Only count completed purchases
+    const stockFromPurchaseEntries = purchaseEntries
+      .filter(p => p.status === 'Completed') // Only count completed entries
       .flatMap(p => p.items)
       .filter(item => item.productId === productId)
-      .reduce((sum, item) => sum + item.quantity, 0);
+      .reduce((sum, item) => sum + item.quantityReceived, 0);
 
     const sales = product.sales || [];
     const stockSold = sales
       .filter(sale => sale.invoiceId !== currentInvoiceId) // Exclude current invoice from calculation
       .reduce((sum, sale) => sum + sale.quantity, 0);
       
-    return stockFromPurchases - stockSold;
-  }, [products, purchases]);
+    return stockFromPurchaseEntries - stockSold;
+  }, [products, purchaseEntries]);
 
   const calculateTaxAmount = (subtotal: number, taxId?: string | null): number => {
     if (!taxId) return 0;
@@ -190,21 +191,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setProducts(prev => [...prev, newProduct]);
   }, [setProducts]);
 
-  const addPurchase = useCallback((purchaseData: Omit<Purchase, 'id'>) => {
-    const newPurchase: Purchase = {
+  const addPurchaseOrder = useCallback((purchaseOrderData: Omit<PurchaseOrder, 'id'>) => {
+    const newPurchaseOrder: PurchaseOrder = {
       id: generateId(),
-      ...purchaseData,
+      ...purchaseOrderData,
     };
-    setPurchases(prev => [...prev, newPurchase]);
-  }, [setPurchases]);
+    setPurchaseOrders(prev => [...prev, newPurchaseOrder]);
+  }, [setPurchaseOrders]);
   
-  const updatePurchase = useCallback((purchase: Purchase) => {
-    setPurchases(prev => prev.map(p => p.id === purchase.id ? purchase : p));
-  }, [setPurchases]);
+  const updatePurchaseOrder = useCallback((purchaseOrder: PurchaseOrder) => {
+    setPurchaseOrders(prev => prev.map(p => p.id === purchaseOrder.id ? purchaseOrder : p));
+  }, [setPurchaseOrders]);
 
-  const deletePurchase = useCallback((purchaseId: string) => {
-    setPurchases(prev => prev.filter(p => p.id !== purchaseId));
-  }, [setPurchases]);
+  const deletePurchaseOrder = useCallback((purchaseOrderId: string) => {
+    setPurchaseOrders(prev => prev.filter(p => p.id !== purchaseOrderId));
+  }, [setPurchaseOrders]);
 
   const addUnit = useCallback((unit: Unit) => {
     setUnits(prev => [...prev, unit]);
@@ -245,22 +246,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setSuppliers(prev => prev.filter(s => s.id !== supplierId));
   }, [setSuppliers]);
 
+  const addPurchaseEntry = useCallback((entry: Omit<PurchaseEntry, 'id'>) => {
+    const newEntry: PurchaseEntry = { id: generateId(), ...entry };
+    setPurchaseEntries(prev => [...prev, newEntry]);
+  }, [setPurchaseEntries]);
 
   const contextValue: AppContextType = {
     isLoading: isUserLoading,
     invoices,
-    addInvoice: addInvoice as any, // Cast to satisfy the complex type
-    updateInvoice: updateInvoice as any, // Cast to satisfy the complex type
+    addInvoice: addInvoice as any,
+    updateInvoice: updateInvoice as any,
     getInvoice,
     deleteInvoice,
     settings,
     updateSettings: updateSettings as any,
     products,
     addProduct: addProduct as any,
-    purchases,
-    addPurchase: addPurchase as any,
-    updatePurchase,
-    deletePurchase,
+    purchaseOrders,
+    addPurchaseOrder: addPurchaseOrder as any,
+    updatePurchaseOrder,
+    deletePurchaseOrder,
+    getPurchaseOrder,
     units,
     addUnit,
     getAvailableStock,
@@ -272,7 +278,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     updateSupplier,
     deleteSupplier,
     getSupplier,
-    getPurchase
+    purchaseEntries,
+    addPurchaseEntry: addPurchaseEntry as any,
   };
   
   if (isUserLoading) {

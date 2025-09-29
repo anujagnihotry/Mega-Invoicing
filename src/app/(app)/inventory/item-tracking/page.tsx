@@ -7,7 +7,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useApp } from '@/hooks/use-app';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { Product } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search } from 'lucide-react';
@@ -17,7 +16,7 @@ import { Separator } from '@/components/ui/separator';
 type Transaction = {
   date: Date;
   productName: string;
-  details: string; // Invoice # or Vendor Name
+  details: string; // Invoice # or "Purchase Entry"
   quantity: number;
   unitName: string;
   status: 'IN' | 'OUT';
@@ -26,7 +25,7 @@ type Transaction = {
 type DateRange = 'all' | 'this_month' | 'last_30_days';
 
 export default function ItemTrackingPage() {
-  const { purchases, invoices, products, units } = useApp();
+  const { purchaseEntries, invoices, products, units, suppliers } = useApp();
   const [searchTerm, setSearchTerm] = React.useState('');
   const [statusFilter, setStatusFilter] = React.useState<'all' | 'IN' | 'OUT'>('all');
   const [dateFilter, setDateFilter] = React.useState<DateRange>('all');
@@ -34,16 +33,17 @@ export default function ItemTrackingPage() {
   const transactions = React.useMemo(() => {
     const allTransactions: Transaction[] = [];
 
-    // Process Purchases (IN)
-    purchases.forEach(purchase => {
-      purchase.items.forEach(item => {
+    // Process Purchase Entries (IN)
+    purchaseEntries.forEach(entry => {
+      const supplier = suppliers.find(s => s.id === entry.supplierId);
+      entry.items.forEach(item => {
         const product = products.find(p => p.id === item.productId);
         const unit = units.find(u => u.id === product?.unitId);
         allTransactions.push({
-          date: new Date(purchase.date),
+          date: new Date(entry.entryDate),
           productName: product?.name || 'N/A',
-          details: purchase.vendorName,
-          quantity: item.quantity,
+          details: `Purchase from ${supplier?.name || 'N/A'}`,
+          quantity: item.quantityReceived,
           unitName: unit?.name || 'N/A',
           status: 'IN',
         });
@@ -68,7 +68,7 @@ export default function ItemTrackingPage() {
 
     // Sort transactions by date, descending
     return allTransactions.sort((a, b) => b.date.getTime() - a.date.getTime());
-  }, [purchases, invoices, products, units]);
+  }, [purchaseEntries, invoices, products, units, suppliers]);
 
   const filteredTransactions = React.useMemo(() => {
     let filtered = transactions;

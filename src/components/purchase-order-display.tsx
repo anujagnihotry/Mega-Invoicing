@@ -1,7 +1,7 @@
 
 'use client';
 
-import type { Purchase, AppSettings, Product, Unit, Supplier } from '@/lib/types';
+import type { PurchaseOrder, AppSettings, Product, Unit, Supplier } from '@/lib/types';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
@@ -9,14 +9,14 @@ import { formatCurrency } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 
 interface PurchaseOrderDisplayProps {
-  purchase: Purchase;
+  purchaseOrder: PurchaseOrder;
   settings: AppSettings;
   products: Product[];
   units: Unit[];
   supplier?: Supplier;
 }
 
-export function PurchaseOrderDisplay({ purchase, settings, products, units, supplier }: PurchaseOrderDisplayProps) {
+export function PurchaseOrderDisplay({ purchaseOrder, settings, products, units, supplier }: PurchaseOrderDisplayProps) {
   
   const getItemDescription = (productId: string) => {
       const product = products.find(p => p.id === productId);
@@ -54,19 +54,19 @@ export function PurchaseOrderDisplay({ purchase, settings, products, units, supp
           <div className="text-right">
             <div className="grid grid-cols-2">
               <span className="font-semibold">PO #</span>
-              <span>{purchase.invoiceNumber}</span>
+              <span>{purchaseOrder.poNumber}</span>
             </div>
             <div className="grid grid-cols-2">
               <span className="font-semibold">Order Date</span>
-              <span>{new Date(purchase.date).toLocaleDateString()}</span>
+              <span>{new Date(purchaseOrder.date).toLocaleDateString()}</span>
             </div>
-             {purchase.expectedDeliveryDate && (
+             {purchaseOrder.expectedDeliveryDate && (
                 <div className="grid grid-cols-2">
                     <span className="font-semibold">Expected By</span>
-                    <span>{new Date(purchase.expectedDeliveryDate).toLocaleDateString()}</span>
+                    <span>{new Date(purchaseOrder.expectedDeliveryDate).toLocaleDateString()}</span>
                 </div>
              )}
-            <Badge className="mt-4">{purchase.status}</Badge>
+            <Badge className="mt-4">{purchaseOrder.status}</Badge>
           </div>
         </div>
 
@@ -83,7 +83,7 @@ export function PurchaseOrderDisplay({ purchase, settings, products, units, supp
             </TableRow>
           </TableHeader>
           <TableBody>
-            {purchase.items.map((item, index) => (
+            {purchaseOrder.items.map((item, index) => (
               <TableRow key={index}>
                 <TableCell className="font-medium">{getItemDescription(item.productId)}</TableCell>
                 <TableCell className="text-center">{item.quantity}</TableCell>
@@ -101,15 +101,15 @@ export function PurchaseOrderDisplay({ purchase, settings, products, units, supp
           <div className="w-full max-w-xs space-y-2">
             <div className="flex justify-between font-bold text-lg">
               <span>Total</span>
-              <span>{formatCurrency(purchase.totalAmount, settings.currency)}</span>
+              <span>{formatCurrency(purchaseOrder.totalAmount, settings.currency)}</span>
             </div>
           </div>
         </div>
         
-        {purchase.notes && (
+        {purchaseOrder.notes && (
             <div className="mt-16">
               <h3 className="font-semibold">Notes</h3>
-              <p className="text-muted-foreground text-sm">{purchase.notes}</p>
+              <p className="text-muted-foreground text-sm">{purchaseOrder.notes}</p>
             </div>
         )}
 

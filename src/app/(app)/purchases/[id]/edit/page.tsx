@@ -3,32 +3,29 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useApp } from '@/hooks/use-app';
-import { PurchaseForm } from '@/components/purchase-form';
+import { PurchaseOrderForm } from '@/components/purchase-order-form';
 import { useEffect, useState } from 'react';
-import type { Purchase } from '@/lib/types';
+import type { PurchaseOrder } from '@/lib/types';
 
-export default function EditPurchasePage() {
+export default function EditPurchaseOrderPage() {
   const router = useRouter();
   const params = useParams();
-  const { getPurchase } = useApp(); // Assuming getPurchase exists
-  const [purchase, setPurchase] = useState<Purchase | undefined>(undefined);
+  const { getPurchaseOrder } = useApp();
+  const [purchaseOrder, setPurchaseOrder] = useState<PurchaseOrder | undefined>(undefined);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const purchaseId = params.id as string;
-    if (purchaseId) {
-      // Simple direct find, assuming `getPurchase` is synchronous from a context
-      const foundPurchase = getPurchase(purchaseId);
-      if (foundPurchase) {
-        setPurchase(foundPurchase);
+    const purchaseOrderId = params.id as string;
+    if (purchaseOrderId) {
+      const foundPurchaseOrder = getPurchaseOrder(purchaseOrderId);
+      if (foundPurchaseOrder) {
+        setPurchaseOrder(foundPurchaseOrder);
       } else {
-        // If not found, redirect. This could happen if the data is not yet loaded
-        // or the ID is invalid.
         router.replace('/suppliers');
       }
     }
     setLoading(false);
-  }, [params.id, getPurchase, router]);
+  }, [params.id, getPurchaseOrder, router]);
 
   if (loading) {
     return (
@@ -38,9 +35,9 @@ export default function EditPurchasePage() {
     );
   }
 
-  if (!purchase) {
+  if (!purchaseOrder) {
     return null; // Or a "Not Found" component
   }
 
-  return <PurchaseForm purchase={purchase} />;
+  return <PurchaseOrderForm purchaseOrder={purchaseOrder} />;
 }

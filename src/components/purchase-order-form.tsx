@@ -9,10 +9,10 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useApp } from '@/hooks/use-app';
 import { useToast } from '@/hooks/use-toast';
-import { Purchase, PurchaseStatus } from '@/lib/types';
+import { PurchaseOrder, PurchaseOrderStatus } from '@/lib/types';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { PlusCircle, Trash2, CalendarIcon } from 'lucide-react';
@@ -21,14 +21,15 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import { useEffect } from 'react';
 
-const purchaseFormSchema = z.object({
-  invoiceNumber: z.string().min(1, 'Invoice number is required'),
+const purchaseOrderFormSchema = z.object({
+  poNumber: z.string().min(1, 'PO number is required'),
   supplierId: z.string().min(1, 'Supplier is required'),
   orderDate: z.date({ required_error: 'Order date is required' }),
   expectedDeliveryDate: z.date().optional(),
   notes: z.string().optional(),
-  status: z.enum(['Pending', 'Completed', 'Cancelled']),
+  status: z.enum(['Pending', 'Completed', 'Cancelled', 'Partially Fulfilled']),
   items: z.array(z.object({
     productId: z.string().min(1, 'Please select a product.'),
     quantity: z.coerce.number().gt(0, 'Quantity must be greater than 0'),
@@ -36,40 +37,51 @@ const purchaseFormSchema = z.object({
   })).min(1, 'At least one item is required'),
 });
 
-type PurchaseFormProps = {
-  purchase?: Purchase;
+type PurchaseOrderFormProps = {
+  purchaseOrder?: PurchaseOrder;
 };
 
-export function PurchaseForm({ purchase }: PurchaseFormProps) {
+export function PurchaseOrderForm({ purchaseOrder }: PurchaseOrderFormProps) {
   const router = useRouter();
-  const { products, addPurchase, updatePurchase, units, suppliers, purchases } = useApp();
+  const { products, addPurchaseOrder, updatePurchaseOrder, units, suppliers, purchaseOrders } = useApp();
   const { toast } = useToast();
 
-  const defaultValues = purchase ? {
-    ...purchase,
-    orderDate: new Date(purchase.date),
-    expectedDeliveryDate: purchase.expectedDeliveryDate ? new Date(purchase.expectedDeliveryDate) : undefined,
+  const defaultValues = purchaseOrder ? {
+    ...purchaseOrder,
+    orderDate: new Date(purchaseOrder.date),
+    expectedDeliveryDate: purchaseOrder.expectedDeliveryDate ? new Date(purchaseOrder.expectedDeliveryDate) : undefined,
   } : {
-    invoiceNumber: `PO-${(purchases.length + 1).toString().padStart(4, '0')}`,
+    poNumber: `PO-${(purchaseOrders.length + 1).toString().padStart(4, '0')}`,
     supplierId: '',
     orderDate: new Date(),
     expectedDeliveryDate: undefined,
     notes: '',
     items: [],
-    status: 'Pending' as PurchaseStatus,
+    status: 'Pending' as PurchaseOrderStatus,
   };
 
-  const form = useForm<z.infer<typeof purchaseFormSchema>>({
-    resolver: zodResolver(purchaseFormSchema),
+  const form = useForm<z.infer<typeof purchaseOrderFormSchema>>({
+    resolver: zodResolver(purchaseOrderFormSchema),
     defaultValues,
   });
+
+  useEffect(() => {
+    if (purchaseOrder) {
+      form.reset({
+        ...purchaseOrder,
+        orderDate: new Date(purchaseOrder.date),
+        expectedDeliveryDate: purchaseOrder.expectedDeliveryDate ? new Date(purchaseOrder.expectedDeliveryDate) : undefined,
+        items: purchaseOrder.items,
+      });
+    }
+  }, [purchaseOrder, form]);
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "items"
   });
 
-  const onSubmit = (values: z.infer<typeof purchaseFormSchema>) => {
+  const onSubmit = (values: z.infer<typeof purchaseOrderFormSchema>) => {
     const totalAmount = values.items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
     const supplier = suppliers.find(s => s.id === values.supplierId);
     
@@ -78,8 +90,8 @@ export function PurchaseForm({ purchase }: PurchaseFormProps) {
         return;
     }
 
-    const purchaseData = {
-      invoiceNumber: values.invoiceNumber,
+    const poData = {
+      poNumber: values.poNumber,
       supplierId: values.supplierId,
       vendorName: supplier.name,
       date: values.orderDate.toISOString(),
@@ -90,12 +102,12 @@ export function PurchaseForm({ purchase }: PurchaseFormProps) {
       totalAmount: totalAmount,
     };
     
-    if (purchase) {
-        updatePurchase({ ...purchaseData, id: purchase.id });
+    if (purchaseOrder) {
+        updatePurchaseOrder({ ...poData, id: purchaseOrder.id });
         toast({ title: "Success", description: "Purchase order updated." });
-        router.push(`/suppliers/${purchase.supplierId}/view`);
+        router.push(`/suppliers/${purchaseOrder.supplierId}/view`);
     } else {
-        addPurchase(purchaseData);
+        addPurchaseOrder(poData);
         toast({ title: "Success", description: "Purchase order created." });
         router.push('/suppliers');
     }
@@ -112,9 +124,9 @@ export function PurchaseForm({ purchase }: PurchaseFormProps) {
 
   return (
     <div className="max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold mb-4">{purchase ? `Edit Purchase Order ${purchase.invoiceNumber}`: 'Create Purchase Order'}</h1>
+        <h1 className="text-2xl font-bold mb-4">{purchaseOrder ? `Edit Purchase Order ${purchaseOrder.poNumber}`: 'Create Purchase Order'}</h1>
         
-        {isFormEmpty && !purchase ? (
+        {isFormEmpty && !purchaseOrder ? (
           <Card>
             <CardContent className="pt-6 text-center">
                 <p className="text-muted-foreground">
@@ -229,6 +241,7 @@ export function PurchaseForm({ purchase }: PurchaseFormProps) {
                             <SelectItem value="Pending">Pending</SelectItem>
                             <SelectItem value="Completed">Completed</SelectItem>
                             <SelectItem value="Cancelled">Cancelled</SelectItem>
+                            <SelectItem value="Partially Fulfilled">Partially Fulfilled</SelectItem>
                         </SelectContent>
                     </Select>
                     <FormMessage />
@@ -328,10 +341,9 @@ export function PurchaseForm({ purchase }: PurchaseFormProps) {
                 )}
             />
 
-            {/* This field is hidden but needed for the form schema */}
             <FormField
                 control={form.control}
-                name="invoiceNumber"
+                name="poNumber"
                 render={({ field }) => (
                     <Input {...field} type="hidden" />
                 )}
@@ -340,7 +352,7 @@ export function PurchaseForm({ purchase }: PurchaseFormProps) {
             <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
                 <Button type="submit">
-                    {purchase ? 'Save Changes' : 'Save'}
+                    {purchaseOrder ? 'Save Changes' : 'Save'}
                 </Button>
             </div>
           </form>

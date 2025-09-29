@@ -1,7 +1,4 @@
 
-
-
-
 export type LineItem = {
   id: string;
   productId: string; // Link to the product
@@ -76,11 +73,11 @@ export type Product = {
   taxPercent?: number;
 };
 
-export type PurchaseStatus = 'Pending' | 'Completed' | 'Cancelled';
+export type PurchaseOrderStatus = 'Pending' | 'Completed' | 'Cancelled' | 'Partially Fulfilled';
 
-export type Purchase = {
+export type PurchaseOrder = {
   id: string;
-  invoiceNumber: string;
+  poNumber: string;
   date: string;
   vendorName: string;
   vendorContact?: string;
@@ -93,8 +90,24 @@ export type Purchase = {
     price: number;
   }[];
   totalAmount: number;
-  status: PurchaseStatus;
+  status: PurchaseOrderStatus;
 };
+
+export type PurchaseEntryStatus = 'Draft' | 'Completed';
+
+export type PurchaseEntry = {
+    id: string;
+    purchaseOrderId?: string; // Link to the original PO
+    entryDate: string;
+    supplierId: string;
+    notes?: string;
+    items: {
+        productId: string;
+        quantityReceived: number;
+    }[];
+    status: PurchaseEntryStatus;
+};
+
 
 export type Supplier = {
   id: string;
@@ -103,4 +116,3 @@ export type Supplier = {
   phone: string;
   address: string;
 };
-
