@@ -61,6 +61,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!product) return 0;
 
     const stockFromPurchases = purchases
+      .filter(p => p.status === 'Completed') // Only count completed purchases
       .flatMap(p => p.items)
       .filter(item => item.productId === productId)
       .reduce((sum, item) => sum + item.quantity, 0);
