@@ -6,10 +6,19 @@ import { usePathname, useRouter } from 'next/navigation';
 import { AppContext, AppContextType } from '@/contexts/app-context';
 import useLocalStorage from '@/hooks/use-local-storage';
 import type { Invoice, AppSettings, Product, PurchaseOrder, Unit, Tax, Supplier, PurchaseEntry } from '@/lib/types';
-import { generateId } from '@/lib/utils';
+import { generateId, formatCurrency } from '@/lib/utils';
 import { useUser } from '@/firebase';
 import { sendEmail } from '@/ai/flows/send-email';
 import { useToast } from '@/hooks/use-toast';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+
+declare module 'jspdf' {
+    interface jsPDF {
+      autoTable: (options: any) => jsPDF;
+    }
+}
+
 
 const defaultSettings: AppSettings = {
   currency: 'USD',
@@ -131,20 +140,102 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           });
           return;
       }
+      
+      const subtotal = newInvoice.items.reduce((acc, item) => acc + item.quantity * item.price, 0);
+      const appliedTax = newInvoice.taxId ? settings.taxes.find(t => t.id === newInvoice.taxId) : null;
+      const total = subtotal + (newInvoice.taxAmount || 0);
+
+      const getProductName = (id: string) => products.find(p => p.id === id)?.name || 'N/A';
 
       const emailHtml = `
-          <h1>New Invoice #${newInvoice.invoiceNumber}</h1>
-          <p>Dear ${newInvoice.clientName},</p>
-          <p>Here is your new invoice. Thank you for your business!</p>
-          <p>You can view the invoice by logging into your account.</p>
-          <p>Total Amount: ${newInvoice.items.reduce((acc, item) => acc + item.quantity * item.price, 0) + (newInvoice.taxAmount || 0)} ${newInvoice.currency}</p>
+        <div style="font-family: sans-serif; line-height: 1.6;">
+            <h2>Invoice from ${settings.companyProfile.name}</h2>
+            <p>Dear ${newInvoice.clientName},</p>
+            <p>Please find your invoice #${newInvoice.invoiceNumber} attached.</p>
+            <p><b>Due Date:</b> ${new Date(newInvoice.dueDate).toLocaleDateString()}</p>
+            <hr />
+            <h3>Summary</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr>
+                        <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">Item</th>
+                        <th style="text-align: right; padding: 8px; border-bottom: 1px solid #ddd;">Quantity</th>
+                        <th style="text-align: right; padding: 8px; border-bottom: 1px solid #ddd;">Price</th>
+                        <th style="text-align: right; padding: 8px; border-bottom: 1px solid #ddd;">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${newInvoice.items.map(item => `
+                        <tr>
+                            <td style="padding: 8px;">${getProductName(item.productId)}</td>
+                            <td style="text-align: right; padding: 8px;">${item.quantity}</td>
+                            <td style="text-align: right; padding: 8px;">${formatCurrency(item.price, newInvoice!.currency)}</td>
+                            <td style="text-align: right; padding: 8px;">${formatCurrency(item.quantity * item.price, newInvoice!.currency)}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+            <hr />
+            <table style="width: 100%; margin-top: 20px;">
+                <tbody>
+                    <tr>
+                        <td style="text-align: right;">Subtotal:</td>
+                        <td style="text-align: right; width: 120px;">${formatCurrency(subtotal, newInvoice.currency)}</td>
+                    </tr>
+                    ${appliedTax ? `
+                    <tr>
+                        <td style="text-align: right;">${appliedTax.name} (${appliedTax.rate}%):</td>
+                        <td style="text-align: right;">${formatCurrency(newInvoice.taxAmount || 0, newInvoice.currency)}</td>
+                    </tr>
+                    ` : ''}
+                    <tr>
+                        <td style="text-align: right; font-weight: bold;">Total:</td>
+                        <td style="text-align: right; font-weight: bold;">${formatCurrency(total, newInvoice.currency)}</td>
+                    </tr>
+                </tbody>
+            </table>
+            <p>Thank you for your business!</p>
+        </div>
       `;
+
+      // Create PDF
+      const doc = new jsPDF();
+      doc.text(`Invoice #${newInvoice.invoiceNumber}`, 14, 22);
+      doc.text(`Client: ${newInvoice.clientName}`, 14, 30);
+      doc.text(`Date: ${new Date(newInvoice.invoiceDate).toLocaleDateString()}`, 14, 38);
+      doc.text(`Due: ${new Date(newInvoice.dueDate).toLocaleDate-String()}`, 14, 46);
+
+      doc.autoTable({
+          startY: 60,
+          head: [['Item', 'Quantity', 'Price', 'Total']],
+          body: newInvoice.items.map(item => [
+              getProductName(item.productId),
+              item.quantity,
+              formatCurrency(item.price, newInvoice!.currency),
+              formatCurrency(item.quantity * item.price, newInvoice!.currency),
+          ]),
+          foot: [
+              ['', '', 'Subtotal', formatCurrency(subtotal, newInvoice.currency)],
+              ...(appliedTax ? [['', '', `${appliedTax.name} (${appliedTax.rate}%)`, formatCurrency(newInvoice.taxAmount || 0, newInvoice.currency)]] : []),
+              ['', '', 'Total', formatCurrency(total, newInvoice.currency)],
+          ],
+          footStyles: { fontStyle: 'bold' }
+      });
+      const pdfBase64 = doc.output('datauristring').split(',')[1];
+
       
       sendEmail({
           to: newInvoice.clientEmail,
-          subject: `New Invoice from ${settings.companyProfile.name}`,
+          subject: `Invoice #${newInvoice.invoiceNumber} from ${settings.companyProfile.name}`,
           html: emailHtml,
-          smtpConfig: settings.smtp
+          smtpConfig: settings.smtp,
+          attachments: [
+              {
+                  filename: `Invoice-${newInvoice.invoiceNumber}.pdf`,
+                  content: pdfBase64,
+                  encoding: 'base64',
+              }
+          ]
       }).then(() => {
           toast({
               title: 'Email Sent',
@@ -160,7 +251,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       })
     }
 
-  }, [setInvoices, setProducts, settings, toast]);
+  }, [setInvoices, setProducts, settings, toast, products]);
 
 
   const updateInvoice = useCallback((updatedInvoiceData: Omit<Invoice, 'currency' | 'taxAmount'>) => {
