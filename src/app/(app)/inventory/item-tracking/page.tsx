@@ -101,10 +101,43 @@ export default function ItemTrackingPage() {
     return filtered;
   }, [transactions, searchTerm, statusFilter, dateFilter]);
 
+  const { totalStockIn, totalStockOut } = React.useMemo(() => {
+    return filteredTransactions.reduce((acc, tx) => {
+        if (tx.status === 'IN') {
+            acc.totalStockIn += tx.quantity;
+        } else {
+            acc.totalStockOut += tx.quantity;
+        }
+        return acc;
+    }, { totalStockIn: 0, totalStockOut: 0 });
+  }, [filteredTransactions]);
+
+
   return (
     <>
       <div className="flex items-center mb-4">
         <h1 className="font-semibold text-lg md:text-2xl">Item Tracking</h1>
+      </div>
+      
+       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2 mb-4">
+        <Card className="bg-green-50 border-green-200">
+          <CardHeader className="pb-2">
+            <CardDescription className="text-green-800">Stock In</CardDescription>
+            <CardTitle className="text-4xl text-green-900">{totalStockIn.toFixed(2)}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-xs text-green-700">Total Incoming Stock</div>
+          </CardContent>
+        </Card>
+        <Card className="bg-red-50 border-red-200">
+          <CardHeader className="pb-2">
+            <CardDescription className="text-red-800">Stock Out</CardDescription>
+            <CardTitle className="text-4xl text-red-900">{totalStockOut.toFixed(2)}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-xs text-red-700">Total Outgoing Stock</div>
+          </CardContent>
+        </Card>
       </div>
 
        <div className="flex flex-col md:flex-row items-center gap-4 mb-4">
