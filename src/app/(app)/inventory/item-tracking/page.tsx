@@ -101,15 +101,27 @@ export default function ItemTrackingPage() {
     return filtered;
   }, [transactions, searchTerm, statusFilter, dateFilter]);
 
-  const { totalStockIn, totalStockOut } = React.useMemo(() => {
-    return filteredTransactions.reduce((acc, tx) => {
-        if (tx.status === 'IN') {
-            acc.totalStockIn += tx.quantity;
-        } else {
-            acc.totalStockOut += tx.quantity;
-        }
-        return acc;
-    }, { totalStockIn: 0, totalStockOut: 0 });
+  const stockByUnit = React.useMemo(() => {
+    const totals: { [unitName: string]: { stockIn: number; stockOut: number } } = {};
+
+    filteredTransactions.forEach(tx => {
+      if (tx.unitName === 'N/A') return; // Skip items with no unit
+
+      if (!totals[tx.unitName]) {
+        totals[tx.unitName] = { stockIn: 0, stockOut: 0 };
+      }
+
+      if (tx.status === 'IN') {
+        totals[tx.unitName].stockIn += tx.quantity;
+      } else {
+        totals[tx.unitName].stockOut += tx.quantity;
+      }
+    });
+
+    return Object.entries(totals).map(([unitName, values]) => ({
+      unitName,
+      ...values,
+    }));
   }, [filteredTransactions]);
 
 
@@ -119,25 +131,29 @@ export default function ItemTrackingPage() {
         <h1 className="font-semibold text-lg md:text-2xl">Item Tracking</h1>
       </div>
       
-       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2 mb-4">
-        <Card className="bg-green-50 border-green-200">
-          <CardHeader className="pb-2">
-            <CardDescription className="text-green-800">Stock In</CardDescription>
-            <CardTitle className="text-4xl text-green-900">{totalStockIn.toFixed(2)}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-xs text-green-700">Total Incoming Stock</div>
-          </CardContent>
-        </Card>
-        <Card className="bg-red-50 border-red-200">
-          <CardHeader className="pb-2">
-            <CardDescription className="text-red-800">Stock Out</CardDescription>
-            <CardTitle className="text-4xl text-red-900">{totalStockOut.toFixed(2)}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-xs text-red-700">Total Outgoing Stock</div>
-          </CardContent>
-        </Card>
+       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-4">
+          {stockByUnit.length > 0 ? stockByUnit.map(({ unitName, stockIn, stockOut }) => (
+            <Card key={unitName}>
+                <CardHeader>
+                    <CardTitle>{unitName}</CardTitle>
+                    <CardDescription>Summary for this unit</CardDescription>
+                </CardHeader>
+                <CardContent className="grid grid-cols-2 gap-4">
+                    <div>
+                        <p className="text-sm font-medium text-green-800">Stock In</p>
+                        <p className="text-2xl font-bold text-green-900">{stockIn.toFixed(2)}</p>
+                    </div>
+                    <div>
+                        <p className="text-sm font-medium text-red-800">Stock Out</p>
+                        <p className="text-2xl font-bold text-red-900">{stockOut.toFixed(2)}</p>
+                    </div>
+                </CardContent>
+            </Card>
+          )) : (
+            <div className="md:col-span-2 lg:col-span-3 text-center text-muted-foreground py-4">
+                No stock movement data to display for the selected filters.
+            </div>
+          )}
       </div>
 
        <div className="flex flex-col md:flex-row items-center gap-4 mb-4">
