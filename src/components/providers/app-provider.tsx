@@ -50,7 +50,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const getSupplier = useCallback((id: string): Supplier | undefined => {
     return suppliers.find(supplier => supplier.id === id);
-    }, [suppliers]);
+  }, [suppliers]);
+  
+  const getPurchase = useCallback((id: string): Purchase | undefined => {
+    return purchases.find(p => p.id === id);
+  }, [purchases]);
 
   const getAvailableStock = useCallback((productId: string, currentInvoiceId?: string) => {
     const product = products.find(p => p.id === productId);
@@ -185,11 +189,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setProducts(prev => [...prev, newProduct]);
   }, [setProducts]);
 
-  const addPurchase = useCallback((purchaseData: Omit<Purchase, 'id' | 'status'>) => {
+  const addPurchase = useCallback((purchaseData: Omit<Purchase, 'id'>) => {
     const newPurchase: Purchase = {
-      ...purchaseData,
       id: generateId(),
-      status: 'Pending',
+      ...purchaseData,
     };
     setPurchases(prev => [...prev, newPurchase]);
   }, [setPurchases]);
@@ -267,7 +270,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     addSupplier,
     updateSupplier,
     deleteSupplier,
-    getSupplier
+    getSupplier,
+    getPurchase
   };
   
   if (isUserLoading) {
