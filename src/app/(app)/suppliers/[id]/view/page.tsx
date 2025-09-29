@@ -157,7 +157,14 @@ export default function ViewSupplierPage() {
                                         <TableCell>{new Date(purchase.date).toLocaleDateString()}</TableCell>
                                         <TableCell>{formatCurrency(purchase.totalAmount, settings.currency)}</TableCell>
                                         <TableCell>
-                                            <Badge className={cn(getStatusBadgeClass(purchase.status))}>
+                                            <Badge className={cn(
+                                                {
+                                                'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-100/80': purchase.status === 'Pending',
+                                                'bg-green-100 text-green-800 border-green-200 hover:bg-green-100/80': purchase.status === 'Completed',
+                                                'bg-red-100 text-red-800 border-red-200 hover:bg-red-100/80': purchase.status === 'Cancelled',
+                                                'bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-100/80': !purchase.status
+                                                }
+                                            )}>
                                                 {purchase.status}
                                             </Badge>
                                         </TableCell>
