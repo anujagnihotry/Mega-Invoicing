@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -38,9 +39,13 @@ import Link from 'next/link';
 
 const purchaseEntryItemSchema = z.object({
     productId: z.string().min(1, 'Please select a product.'),
-    quantityReceived: z.coerce.number().gt(0, 'Quantity must be greater than 0'),
-    maxQuantity: z.number().optional(), // For validation, not part of final data
+    quantityReceived: z.coerce.number().min(0, 'Quantity must be 0 or more.'),
+    orderedQuantity: z.number().optional(), // Original quantity from PO
+}).refine(data => data.orderedQuantity === undefined || data.quantityReceived <= data.orderedQuantity, {
+    message: "Cannot receive more than the ordered quantity.",
+    path: ["quantityReceived"],
 });
+
 
 const purchaseEntrySchema = z.object({
   purchaseOrderId: z.string().optional(),
@@ -49,10 +54,7 @@ const purchaseEntrySchema = z.object({
   notes: z.string().optional(),
   status: z.enum(['Draft', 'Completed']),
   items: z.array(purchaseEntryItemSchema)
-    .min(1, 'At least one item is required')
-    .refine(items => items.every(item => item.maxQuantity === undefined || item.quantityReceived <= item.maxQuantity), {
-        message: 'Cannot receive more items than were ordered.',
-    }),
+    .min(1, 'At least one item is required'),
 });
 
 
@@ -82,6 +84,7 @@ export default function NewPurchaseEntryPage() {
   
   const watchedSupplierId = form.watch('supplierId');
   const watchedPurchaseOrderId = form.watch('purchaseOrderId');
+  const watchedItems = form.watch('items');
 
   const availablePurchaseOrders = React.useMemo(() => {
     if (!watchedSupplierId) return [];
@@ -101,7 +104,7 @@ export default function NewPurchaseEntryPage() {
                 return {
                     productId: item.productId,
                     quantityReceived: pendingQty,
-                    maxQuantity: pendingQty,
+                    orderedQuantity: pendingQty,
                 }
         });
         replace(newItems);
@@ -112,7 +115,7 @@ export default function NewPurchaseEntryPage() {
   }, [watchedPurchaseOrderId, purchaseOrders, replace]);
 
   const onSubmit = (values: z.infer<typeof purchaseEntrySchema>) => {
-    const finalItems = values.items.map(({ maxQuantity, ...item }) => item);
+    const finalItems = values.items.map(({ orderedQuantity, ...item }) => item);
     addPurchaseEntry({
       ...values,
       items: finalItems,
@@ -264,61 +267,77 @@ export default function NewPurchaseEntryPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-3/5">Item Name</TableHead>
+                    {watchedPurchaseOrderId !== MANUAL_ENTRY_VALUE && <TableHead>Ordered</TableHead>}
                     <TableHead>Quantity Received</TableHead>
                      {watchedPurchaseOrderId !== MANUAL_ENTRY_VALUE && <TableHead>Pending</TableHead>}
                     <TableHead className="text-right">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {fields.map((field, index) => (
-                    <TableRow key={field.id}>
-                      <TableCell>
-                        <FormField
-                          control={form.control}
-                          name={`items.${index}.productId`}
-                          render={({ field: formField }) => (
-                            <Select onValueChange={formField.onChange} value={formField.value} disabled={watchedPurchaseOrderId !== MANUAL_ENTRY_VALUE}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select an item..." />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {products.map(product => (
-                                  <SelectItem key={product.id} value={product.id}>{product.name}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          )}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <FormField
-                          control={form.control}
-                          name={`items.${index}.quantityReceived`}
-                          render={({ field: formField }) => (
-                            <Input 
-                                type="number" 
-                                step="any" {...formField} 
-                                max={field.maxQuantity} 
+                  {fields.map((field, index) => {
+                    const currentItem = watchedItems[index];
+                    const ordered = currentItem?.orderedQuantity ?? 0;
+                    const received = currentItem?.quantityReceived ?? 0;
+                    const pending = ordered - received;
+                    
+                    return (
+                        <TableRow key={field.id}>
+                        <TableCell>
+                            <FormField
+                            control={form.control}
+                            name={`items.${index}.productId`}
+                            render={({ field: formField }) => (
+                                <Select onValueChange={formField.onChange} value={formField.value} disabled={watchedPurchaseOrderId !== MANUAL_ENTRY_VALUE}>
+                                <FormControl>
+                                    <SelectTrigger>
+                                    <SelectValue placeholder="Select an item..." />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    {products.map(product => (
+                                    <SelectItem key={product.id} value={product.id}>{product.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                                </Select>
+                            )}
                             />
-                          )}
-                        />
-                      </TableCell>
-                       {watchedPurchaseOrderId !== MANUAL_ENTRY_VALUE && (
+                        </TableCell>
+                         {watchedPurchaseOrderId !== MANUAL_ENTRY_VALUE && (
                             <TableCell>
-                                <span className="text-muted-foreground">{field.maxQuantity}</span>
+                                <span className="text-muted-foreground">{currentItem?.orderedQuantity}</span>
                             </TableCell>
                         )}
-                      <TableCell className="text-right">
-                        {watchedPurchaseOrderId === MANUAL_ENTRY_VALUE && (
-                            <Button variant="ghost" size="icon" onClick={() => remove(index)}>
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
+                        <TableCell>
+                            <FormField
+                            control={form.control}
+                            name={`items.${index}.quantityReceived`}
+                            render={({ field: formField }) => (
+                                <>
+                                <Input 
+                                    type="number" 
+                                    step="any" {...formField} 
+                                    max={field.orderedQuantity} 
+                                />
+                                <FormMessage />
+                                </>
+                            )}
+                            />
+                        </TableCell>
+                        {watchedPurchaseOrderId !== MANUAL_ENTRY_VALUE && (
+                            <TableCell>
+                                <span className={cn("text-muted-foreground", { 'text-destructive': pending < 0 })}>{pending}</span>
+                            </TableCell>
                         )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                        <TableCell className="text-right">
+                            {watchedPurchaseOrderId === MANUAL_ENTRY_VALUE && (
+                                <Button variant="ghost" size="icon" onClick={() => remove(index)}>
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                            )}
+                        </TableCell>
+                        </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
                <FormMessage>{form.formState.errors.items?.root?.message || form.formState.errors.items?.message}</FormMessage>
@@ -346,3 +365,5 @@ export default function NewPurchaseEntryPage() {
     </div>
   );
 }
+
+    
