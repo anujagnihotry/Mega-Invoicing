@@ -110,7 +110,7 @@ export default function NewPurchaseEntryPage() {
                 return {
                     productId: item.productId,
                     quantityReceived: pendingQty,
-                    orderedQuantity: item.quantity, // Show the original ordered quantity
+                    orderedQuantity: item.quantity,
                 }
         });
         replace(newItems);
@@ -272,10 +272,10 @@ export default function NewPurchaseEntryPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-3/5">Item Name</TableHead>
-                    {watchedPurchaseOrderId !== MANUAL_ENTRY_VALUE && <TableHead>Ordered</TableHead>}
-                    <TableHead>Quantity Received</TableHead>
-                     {watchedPurchaseOrderId !== MANUAL_ENTRY_VALUE && <TableHead>Pending</TableHead>}
+                    <TableHead className="w-2/5">Item Name</TableHead>
+                    {watchedPurchaseOrderId !== MANUAL_ENTRY_VALUE && <TableHead className="w-1/6">Ordered</TableHead>}
+                    <TableHead className="w-1/6">Quantity Received</TableHead>
+                     {watchedPurchaseOrderId !== MANUAL_ENTRY_VALUE && <TableHead className="w-1/6">Pending</TableHead>}
                     <TableHead className="text-right">Action</TableHead>
                   </TableRow>
                 </TableHeader>
