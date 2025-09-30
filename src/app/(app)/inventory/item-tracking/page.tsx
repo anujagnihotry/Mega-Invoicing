@@ -27,7 +27,7 @@ type SortableKeys = keyof Transaction;
 type DateRange = 'all' | 'this_month' | 'last_30_days';
 
 export default function ItemTrackingPage() {
-  const { purchaseEntries, invoices, products, units, suppliers } = useApp();
+  const { purchaseEntries, invoices, products, units, suppliers, purchaseOrders } = useApp();
   const [searchTerm, setSearchTerm] = React.useState('');
   const [statusFilter, setStatusFilter] = React.useState<'all' | 'IN' | 'OUT'>('all');
   const [dateFilter, setDateFilter] = React.useState<DateRange>('all');
@@ -81,7 +81,7 @@ export default function ItemTrackingPage() {
 
     // Initial sort transactions by date, descending
     return allTransactions.sort((a, b) => b.date.getTime() - a.date.getTime());
-  }, [purchaseEntries, invoices, products, units, suppliers]);
+  }, [purchaseEntries, invoices, products, units, suppliers, purchaseOrders]);
 
   const filteredAndSortedTransactions = React.useMemo(() => {
     let filtered = transactions;
@@ -320,3 +320,5 @@ export default function ItemTrackingPage() {
     </>
   );
 }
+
+    
