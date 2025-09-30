@@ -41,8 +41,14 @@ const purchaseEntryItemSchema = z.object({
     productId: z.string().min(1, 'Please select a product.'),
     quantityReceived: z.coerce.number().min(0, 'Quantity must be 0 or more.'),
     orderedQuantity: z.number().readonly().optional(), // Original quantity from PO, not to be modified
-}).refine(data => data.orderedQuantity === undefined || data.quantityReceived <= data.orderedQuantity, {
-    message: "Cannot receive more than the ordered quantity.",
+}).refine(data => {
+    // When orderedQuantity is defined (i.e., not manual entry), received must be <= ordered
+    if (data.orderedQuantity !== undefined) {
+        return data.quantityReceived <= data.orderedQuantity;
+    }
+    return true;
+}, {
+    message: "Cannot receive more than the pending quantity.",
     path: ["quantityReceived"],
 });
 
@@ -104,7 +110,7 @@ export default function NewPurchaseEntryPage() {
                 return {
                     productId: item.productId,
                     quantityReceived: pendingQty,
-                    orderedQuantity: pendingQty,
+                    orderedQuantity: item.quantity, // Show the original ordered quantity
                 }
         });
         replace(newItems);
@@ -249,7 +255,7 @@ export default function NewPurchaseEntryPage() {
                     {watchedPurchaseOrderId === MANUAL_ENTRY_VALUE && (
                         <Button
                             type="button"
-                            onClick={() => append({ productId: '', quantityReceived: 1 })}
+                            onClick={() => append({ productId: '', quantityReceived: 1, orderedQuantity: undefined })}
                         >
                             <PlusCircle className="mr-2 h-4 w-4" />
                             Add Item
@@ -276,9 +282,13 @@ export default function NewPurchaseEntryPage() {
                 <TableBody>
                   {fields.map((field, index) => {
                     const currentItem = watchedItems[index];
-                    const ordered = currentItem?.orderedQuantity ?? 0;
-                    const received = currentItem?.quantityReceived ?? 0;
-                    const pending = ordered - received;
+                    const originalOrdered = purchaseOrders.find(po => po.id === watchedPurchaseOrderId)?.items.find(i => i.productId === currentItem.productId)?.quantity || 0;
+                    const previouslyReceived = purchaseOrders.find(po => po.id === watchedPurchaseOrderId)?.items.find(i => i.productId === currentItem.productId)?.quantityReceived || 0;
+
+                    const currentReceived = currentItem?.quantityReceived ?? 0;
+
+                    const pendingQty = originalOrdered - previouslyReceived - currentReceived;
+
                     
                     return (
                         <TableRow key={field.id}>
@@ -304,7 +314,7 @@ export default function NewPurchaseEntryPage() {
                         </TableCell>
                          {watchedPurchaseOrderId !== MANUAL_ENTRY_VALUE && (
                             <TableCell>
-                                <Input type="number" value={currentItem?.orderedQuantity} readOnly className="border-none bg-transparent" />
+                                <Input type="number" value={originalOrdered} readOnly className="border-none bg-transparent" />
                             </TableCell>
                         )}
                         <TableCell>
@@ -316,7 +326,7 @@ export default function NewPurchaseEntryPage() {
                                 <Input 
                                     type="number" 
                                     step="any" {...formField} 
-                                    max={field.orderedQuantity} 
+                                    max={originalOrdered - previouslyReceived} 
                                 />
                                 {form.formState.errors.items?.[index]?.quantityReceived && <FormMessage />}
                                 </>
@@ -325,7 +335,7 @@ export default function NewPurchaseEntryPage() {
                         </TableCell>
                         {watchedPurchaseOrderId !== MANUAL_ENTRY_VALUE && (
                             <TableCell>
-                                 <Input type="number" value={pending} readOnly className={cn("border-none bg-transparent", { 'text-destructive': pending < 0 })} />
+                                 <Input type="number" value={pendingQty} readOnly className={cn("border-none bg-transparent", { 'text-destructive': pendingQty < 0 })} />
                             </TableCell>
                         )}
                         <TableCell className="text-right">
