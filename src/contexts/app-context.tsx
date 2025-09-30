@@ -1,6 +1,6 @@
 
 import { createContext } from 'react';
-import type { Invoice, AppSettings, Product, PurchaseOrder, Unit, Tax, Supplier, PurchaseEntry } from '@/lib/types';
+import type { Invoice, AppSettings, Product, PurchaseOrder, Unit, Tax, Supplier, PurchaseEntry, Category } from '@/lib/types';
 
 export interface AppContextType {
   isLoading: boolean;
@@ -20,6 +20,8 @@ export interface AppContextType {
   addProduct: (product: Omit<Product, 'id' | 'sales'>) => void;
   units: Unit[];
   addUnit: (unit: Unit) => void;
+  categories: Category[];
+  addCategory: (category: Category) => void;
   getAvailableStock: (productId: string, currentInvoiceId?: string) => number;
   addTax: (tax: Omit<Tax, 'id'>) => void;
   updateTax: (tax: Tax) => void;

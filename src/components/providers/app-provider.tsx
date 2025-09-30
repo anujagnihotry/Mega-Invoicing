@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { AppContext, AppContextType } from '@/contexts/app-context';
 import useLocalStorage from '@/hooks/use-local-storage';
-import type { Invoice, AppSettings, Product, PurchaseOrder, Unit, Tax, Supplier, PurchaseEntry } from '@/lib/types';
+import type { Invoice, AppSettings, Product, PurchaseOrder, Unit, Tax, Supplier, PurchaseEntry, Category } from '@/lib/types';
 import { generateId, formatCurrency } from '@/lib/utils';
 import { useUser } from '@/firebase';
 import { sendEmail } from '@/ai/flows/send-email';
@@ -48,6 +48,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [purchaseOrders, setPurchaseOrders] = useLocalStorage<PurchaseOrder[]>('purchaseOrders', []);
   const [purchaseEntries, setPurchaseEntries] = useLocalStorage<PurchaseEntry[]>('purchaseEntries', []);
   const [units, setUnits] = useLocalStorage<Unit[]>('units', []);
+  const [categories, setCategories] = useLocalStorage<Category[]>('categories', []);
   const [suppliers, setSuppliers] = useLocalStorage<Supplier[]>('suppliers', []);
   const { toast } = useToast();
   
@@ -203,7 +204,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       doc.text(`Invoice #${newInvoice.invoiceNumber}`, 14, 22);
       doc.text(`Client: ${newInvoice.clientName}`, 14, 30);
       doc.text(`Date: ${new Date(newInvoice.invoiceDate).toLocaleDateString()}`, 14, 38);
-      doc.text(`Due: ${new Date(newInvoice.dueDate).toLocaleDate-String()}`, 14, 46);
+      doc.text(`Due: ${new Date(newInvoice.dueDate).toLocaleDateString()}`, 14, 46);
 
       doc.autoTable({
           startY: 60,
@@ -353,6 +354,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const addUnit = useCallback((unit: Unit) => {
     setUnits(prev => [...prev, unit]);
   }, [setUnits]);
+
+  const addCategory = useCallback((category: Category) => {
+    setCategories(prev => [...prev, category]);
+  }, [setCategories]);
   
   const addTax = useCallback((tax: Omit<Tax, 'id'>) => {
     const newTax: Tax = { id: generateId(), ...tax };
@@ -412,6 +417,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     getPurchaseOrder,
     units,
     addUnit,
+    categories,
+    addCategory,
     getAvailableStock,
     addTax,
     updateTax,

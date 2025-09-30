@@ -20,10 +20,11 @@ const addProductSchema = z.object({
   name: z.string().min(1, 'Product name is required'),
   price: z.coerce.number().gt(0, 'Price must be greater than 0'),
   unitId: z.string().min(1, 'Unit is required'),
+  categoryId: z.string().optional(),
 });
 
 export default function InventoryPage() {
-  const { products, addProduct, units, getAvailableStock } = useApp();
+  const { products, addProduct, units, categories, getAvailableStock } = useApp();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
 
   const form = useForm<z.infer<typeof addProductSchema>>({
@@ -32,6 +33,7 @@ export default function InventoryPage() {
       name: '',
       price: 0,
       unitId: '',
+      categoryId: '',
     },
   });
 
@@ -40,6 +42,7 @@ export default function InventoryPage() {
         name: values.name,
         price: values.price,
         unitId: values.unitId,
+        categoryId: values.categoryId,
     });
     form.reset();
     setIsDialogOpen(false);
@@ -48,6 +51,12 @@ export default function InventoryPage() {
   const getUnitName = (unitId: string) => {
     const unit = units.find(u => u.id === unitId);
     return unit ? unit.name : 'N/A';
+  }
+
+  const getCategoryName = (categoryId?: string) => {
+    if (!categoryId) return 'N/A';
+    const category = categories.find(c => c.id === categoryId);
+    return category ? category.name : 'N/A';
   }
 
   return (
@@ -120,6 +129,28 @@ export default function InventoryPage() {
                             </FormItem>
                         )}
                     />
+                    <FormField
+                        control={form.control}
+                        name="categoryId"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Category (Optional)</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select a category" />
+                                </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                {categories.map(category => (
+                                    <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
+                                ))}
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
                     <Button type="submit">Add Product</Button>
                   </form>
                 </Form>
@@ -138,6 +169,7 @@ export default function InventoryPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Product Name</TableHead>
+                <TableHead>Category</TableHead>
                 <TableHead>Unit</TableHead>
                 <TableHead className="text-right">Available Quantity</TableHead>
                 <TableHead className="text-right">Price</TableHead>
@@ -148,6 +180,7 @@ export default function InventoryPage() {
                 products.map((product: Product) => (
                   <TableRow key={product.id}>
                     <TableCell className="font-medium">{product.name}</TableCell>
+                    <TableCell>{getCategoryName(product.categoryId)}</TableCell>
                     <TableCell>{getUnitName(product.unitId)}</TableCell>
                     <TableCell className="text-right">{getAvailableStock(product.id)}</TableCell>
                      <TableCell className="text-right">{product.price}</TableCell>
@@ -155,7 +188,7 @@ export default function InventoryPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center">
+                  <TableCell colSpan={5} className="h-24 text-center">
                     No products found. Add one to get started.
                   </TableCell>
                 </TableRow>

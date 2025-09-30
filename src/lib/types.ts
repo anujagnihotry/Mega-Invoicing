@@ -1,4 +1,5 @@
 
+
 export type LineItem = {
   id: string;
   productId: string; // Link to the product
@@ -72,11 +73,17 @@ export type Unit = {
   name: string;
 };
 
+export type Category = {
+  id: string;
+  name: string;
+};
+
 export type Product = {
   id: string;
   name: string;
   price: number;
   unitId: string;
+  categoryId?: string;
   sales: { invoiceId: string, quantity: number }[]; // Track sales for inventory adjustments
   discount?: {
     type: 'fixed' | 'percentage';
