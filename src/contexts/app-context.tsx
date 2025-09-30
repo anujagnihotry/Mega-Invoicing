@@ -18,6 +18,9 @@ export interface AppContextType {
   deletePurchaseOrder: (purchaseOrderId: string) => void;
   getPurchaseOrder: (id: string) => PurchaseOrder | undefined;
   addProduct: (product: Omit<Product, 'id' | 'sales'>) => void;
+  updateProduct: (product: Product) => void;
+  deleteProduct: (productId: string) => void;
+  getProduct: (productId: string) => Product | undefined;
   units: Unit[];
   addUnit: (unit: Unit) => void;
   categories: Category[];

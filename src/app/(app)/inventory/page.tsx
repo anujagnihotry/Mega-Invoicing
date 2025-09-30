@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Pencil, Trash2, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -15,6 +15,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 
 const addProductSchema = z.object({
   name: z.string().min(1, 'Product name is required'),
@@ -24,8 +28,11 @@ const addProductSchema = z.object({
 });
 
 export default function InventoryPage() {
-  const { products, addProduct, units, categories, getAvailableStock } = useApp();
+  const { products, addProduct, deleteProduct, units, categories, getAvailableStock } = useApp();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const { toast } = useToast();
+  const router = useRouter();
 
   const form = useForm<z.infer<typeof addProductSchema>>({
     resolver: zodResolver(addProductSchema),
@@ -46,6 +53,7 @@ export default function InventoryPage() {
     });
     form.reset();
     setIsDialogOpen(false);
+    toast({ title: 'Success', description: 'Product added successfully.' });
   };
   
   const getUnitName = (unitId: string) => {
@@ -59,11 +67,29 @@ export default function InventoryPage() {
     return category ? category.name : 'N/A';
   }
 
+  const handleDelete = (productId: string) => {
+    deleteProduct(productId);
+    toast({ title: 'Success', description: 'Product deleted successfully.' });
+  }
+
+  const filteredProducts = products.filter(product => 
+    product.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <>
       <div className="flex items-center">
         <h1 className="font-semibold text-lg md:text-2xl">Product Master</h1>
         <div className="ml-auto flex items-center gap-2">
+           <div className="relative w-full max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                  placeholder="Search products..."
+                  className="pl-9"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+              />
+          </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button size="sm" disabled={units.length === 0}>
@@ -173,22 +199,59 @@ export default function InventoryPage() {
                 <TableHead>Unit</TableHead>
                 <TableHead className="text-right">Available Quantity</TableHead>
                 <TableHead className="text-right">Price</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {products.length > 0 ? (
-                products.map((product: Product) => (
+              {filteredProducts.length > 0 ? (
+                filteredProducts.map((product: Product) => (
                   <TableRow key={product.id}>
                     <TableCell className="font-medium">{product.name}</TableCell>
                     <TableCell>{getCategoryName(product.categoryId)}</TableCell>
                     <TableCell>{getUnitName(product.unitId)}</TableCell>
                     <TableCell className="text-right">{getAvailableStock(product.id)}</TableCell>
                      <TableCell className="text-right">{product.price}</TableCell>
+                     <TableCell className="text-right">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuItem onClick={() => router.push(`/inventory/${product.id}/edit`)}>
+                                    <Pencil className="mr-2 h-4 w-4" /> Edit
+                                </DropdownMenuItem>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
+                                            <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                        </DropdownMenuItem>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                This action cannot be undone. This will permanently delete the product.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => handleDelete(product.id)}>
+                                                Delete
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                     </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center">
+                  <TableCell colSpan={6} className="h-24 text-center">
                     No products found. Add one to get started.
                   </TableCell>
                 </TableRow>

@@ -79,6 +79,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return purchaseOrders.find(p => p.id === id);
   }, [purchaseOrders]);
 
+  const getProduct = useCallback((id: string): Product | undefined => {
+    return products.find(p => p.id === id);
+  }, [products]);
+
   const getAvailableStock = useCallback((productId: string, currentInvoiceId?: string) => {
     const product = products.find(p => p.id === productId);
     if (!product) return 0;
@@ -335,6 +339,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setProducts(prev => [...prev, newProduct]);
   }, [setProducts]);
 
+  const updateProduct = useCallback((product: Product) => {
+    setProducts(prev => prev.map(p => p.id === product.id ? product : p));
+  }, [setProducts]);
+  
+  const deleteProduct = useCallback((productId: string) => {
+    // Also remove this product from any invoices that might be using it
+    setInvoices(prev => prev.map(invoice => ({
+        ...invoice,
+        items: invoice.items.filter(item => item.productId !== productId)
+    })));
+    setProducts(prev => prev.filter(p => p.id !== productId));
+  }, [setProducts, setInvoices]);
+
   const addPurchaseOrder = useCallback((purchaseOrderData: Omit<PurchaseOrder, 'id'>) => {
     const newPurchaseOrder: PurchaseOrder = {
       id: generateId(),
@@ -418,6 +435,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     updateSettings: updateSettings as any,
     products,
     addProduct: addProduct as any,
+    updateProduct: updateProduct as any,
+    deleteProduct,
+    getProduct,
     purchaseOrders,
     addPurchaseOrder: addPurchaseOrder as any,
     updatePurchaseOrder,
