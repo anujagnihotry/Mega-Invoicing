@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -10,7 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useApp } from '@/hooks/use-app';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, cn } from '@/lib/utils';
 import { Invoice, InvoiceStatus } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import jsPDF from 'jspdf';
@@ -51,7 +52,13 @@ function InvoiceTable({ invoices }: { invoices: Invoice[] }) {
                     <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
                     <TableCell>{invoice.clientName}</TableCell>
                     <TableCell className="hidden md:table-cell">
-                    <Badge variant="outline">{invoice.status}</Badge>
+                    <Badge variant="outline" className={cn(
+                        {
+                            'bg-green-100 text-green-800 border-green-200': invoice.status === 'Paid',
+                            'bg-red-100 text-red-800 border-red-200': invoice.status === 'Cancelled',
+                            'bg-blue-100 text-blue-800 border-blue-200': invoice.status === 'Sent',
+                        }
+                    )}>{invoice.status}</Badge>
                     </TableCell>
                     <TableCell className="hidden md:table-cell">{new Date(invoice.dueDate).toLocaleDateString()}</TableCell>
                     <TableCell className="text-right">
