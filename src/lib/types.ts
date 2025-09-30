@@ -84,12 +84,12 @@ export type Product = {
   price: number;
   unitId: string;
   categoryId?: string;
+  thresholdValue?: number;
   sales: { invoiceId: string, quantity: number }[]; // Track sales for inventory adjustments
   discount?: {
     type: 'fixed' | 'percentage';
     value: number;
   };
-  thresholdValue?: number;
   taxPercent?: number;
 };
 

@@ -25,6 +25,7 @@ const addProductSchema = z.object({
   price: z.coerce.number().gt(0, 'Price must be greater than 0'),
   unitId: z.string().min(1, 'Unit is required'),
   categoryId: z.string().optional(),
+  thresholdValue: z.coerce.number().optional(),
 });
 
 export default function InventoryPage() {
@@ -41,6 +42,7 @@ export default function InventoryPage() {
       price: 0,
       unitId: '',
       categoryId: '',
+      thresholdValue: 0,
     },
   });
 
@@ -50,6 +52,7 @@ export default function InventoryPage() {
         price: values.price,
         unitId: values.unitId,
         categoryId: values.categoryId,
+        thresholdValue: values.thresholdValue,
     });
     form.reset();
     setIsDialogOpen(false);
@@ -177,6 +180,19 @@ export default function InventoryPage() {
                             </FormItem>
                         )}
                     />
+                    <FormField
+                      control={form.control}
+                      name="thresholdValue"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Threshold (Optional)</FormLabel>
+                          <FormControl>
+                            <Input type="number" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                     <Button type="submit">Add Product</Button>
                   </form>
                 </Form>
@@ -197,6 +213,7 @@ export default function InventoryPage() {
                 <TableHead>Product Name</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead>Unit</TableHead>
+                <TableHead>Threshold</TableHead>
                 <TableHead className="text-right">Available Quantity</TableHead>
                 <TableHead className="text-right">Price</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -209,6 +226,7 @@ export default function InventoryPage() {
                     <TableCell className="font-medium">{product.name}</TableCell>
                     <TableCell>{getCategoryName(product.categoryId)}</TableCell>
                     <TableCell>{getUnitName(product.unitId)}</TableCell>
+                    <TableCell>{product.thresholdValue || 'N/A'}</TableCell>
                     <TableCell className="text-right">{getAvailableStock(product.id)}</TableCell>
                      <TableCell className="text-right">{product.price}</TableCell>
                      <TableCell className="text-right">
@@ -251,7 +269,7 @@ export default function InventoryPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center">
+                  <TableCell colSpan={7} className="h-24 text-center">
                     No products found. Add one to get started.
                   </TableCell>
                 </TableRow>

@@ -19,6 +19,7 @@ const productFormSchema = z.object({
   price: z.coerce.number().gt(0, 'Price must be greater than 0'),
   unitId: z.string().min(1, 'Unit is required'),
   categoryId: z.string().optional(),
+  thresholdValue: z.coerce.number().optional(),
 });
 
 export default function EditProductPage() {
@@ -37,6 +38,7 @@ export default function EditProductPage() {
             price: 0,
             unitId: '',
             categoryId: '',
+            thresholdValue: 0,
         },
     });
 
@@ -142,6 +144,17 @@ export default function EditProductPage() {
                                             ))}
                                             </SelectContent>
                                         </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="thresholdValue"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Threshold (Optional)</FormLabel>
+                                        <FormControl><Input type="number" {...field} /></FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}
