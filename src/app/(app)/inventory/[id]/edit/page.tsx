@@ -44,7 +44,10 @@ export default function EditProductPage() {
 
     React.useEffect(() => {
         if (product) {
-            form.reset(product);
+            form.reset({
+              ...product,
+              categoryId: product.categoryId || '', // Ensure categoryId is a string
+            });
         } else if (productId) {
             setTimeout(() => router.replace('/inventory'), 500);
         }
