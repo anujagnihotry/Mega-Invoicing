@@ -48,6 +48,8 @@ const purchaseEntrySchema = z.object({
   })).min(1, 'At least one item is required'),
 });
 
+const MANUAL_ENTRY_VALUE = 'manual';
+
 export default function NewPurchaseEntryPage() {
   const router = useRouter();
   const { products, suppliers, addPurchaseEntry, purchaseOrders } = useApp();
@@ -61,6 +63,7 @@ export default function NewPurchaseEntryPage() {
       notes: '',
       items: [],
       status: 'Completed' as PurchaseEntryStatus,
+      purchaseOrderId: MANUAL_ENTRY_VALUE,
     },
   });
 
@@ -80,7 +83,7 @@ export default function NewPurchaseEntryPage() {
   }, [watchedSupplierId, purchaseOrders]);
 
   React.useEffect(() => {
-    if (watchedPurchaseOrderId) {
+    if (watchedPurchaseOrderId && watchedPurchaseOrderId !== MANUAL_ENTRY_VALUE) {
       const selectedPO = purchaseOrders.find(po => po.id === watchedPurchaseOrderId);
       if (selectedPO) {
         const newItems = selectedPO.items.map(item => ({
@@ -90,13 +93,14 @@ export default function NewPurchaseEntryPage() {
         replace(newItems);
       }
     } else {
-      replace([]); // Clear items if no PO is selected
+      replace([]); // Clear items if Manual Entry is selected
     }
   }, [watchedPurchaseOrderId, purchaseOrders, replace]);
 
   const onSubmit = (values: z.infer<typeof purchaseEntrySchema>) => {
     addPurchaseEntry({
       ...values,
+      purchaseOrderId: values.purchaseOrderId === MANUAL_ENTRY_VALUE ? undefined : values.purchaseOrderId,
       entryDate: values.entryDate.toISOString(),
     });
     toast({ title: 'Success', description: 'Purchase entry created and stock updated.' });
@@ -149,7 +153,7 @@ export default function NewPurchaseEntryPage() {
                   <FormLabel>Supplier</FormLabel>
                   <Select onValueChange={(value) => {
                       field.onChange(value);
-                      form.setValue('purchaseOrderId', ''); // Reset PO when supplier changes
+                      form.setValue('purchaseOrderId', MANUAL_ENTRY_VALUE); // Reset to manual when supplier changes
                   }} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
@@ -176,13 +180,14 @@ export default function NewPurchaseEntryPage() {
                     <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                         <SelectTrigger>
-                            <SelectValue placeholder="Import from a PO..." />
+                            <SelectValue placeholder="Select an option" />
                         </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                        {availablePurchaseOrders.map((po: PurchaseOrder) => (
-                            <SelectItem key={po.id} value={po.id}>{po.poNumber} - {new Date(po.date).toLocaleDateString()}</SelectItem>
-                        ))}
+                            <SelectItem value={MANUAL_ENTRY_VALUE}>Manual Entry</SelectItem>
+                            {availablePurchaseOrders.map((po: PurchaseOrder) => (
+                                <SelectItem key={po.id} value={po.id}>{po.poNumber} - {new Date(po.date).toLocaleDateString()}</SelectItem>
+                            ))}
                         </SelectContent>
                     </Select>
                     <FormMessage />

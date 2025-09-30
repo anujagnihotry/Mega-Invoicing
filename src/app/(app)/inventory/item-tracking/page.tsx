@@ -39,13 +39,23 @@ export default function ItemTrackingPage() {
     // Process Purchase Entries (IN)
     purchaseEntries.forEach(entry => {
       const supplier = suppliers.find(s => s.id === entry.supplierId);
+      const purchaseOrder = entry.purchaseOrderId ? purchaseOrders.find(po => po.id === entry.purchaseOrderId) : null;
+      
       entry.items.forEach(item => {
         const product = products.find(p => p.id === item.productId);
         const unit = units.find(u => u.id === product?.unitId);
+        
+        let details = `Manual Entry from ${supplier?.name || 'N/A'}`;
+        if (purchaseOrder) {
+          details = `PO #${purchaseOrder.poNumber} from ${supplier?.name || 'N/A'}`;
+        } else if (!entry.purchaseOrderId) {
+           details = `Manual Entry from ${supplier?.name || 'N/A'}`;
+        }
+
         allTransactions.push({
           date: new Date(entry.entryDate),
           productName: product?.name || 'N/A',
-          details: `Purchase from ${supplier?.name || 'N/A'}`,
+          details: details,
           quantity: item.quantityReceived,
           unitName: unit?.name || 'N/A',
           status: 'IN',
