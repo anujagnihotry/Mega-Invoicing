@@ -9,9 +9,10 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search } from 'lucide-react';
+import { Search, ArrowUpDown } from 'lucide-react';
 import { subDays, startOfMonth } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
 
 type Transaction = {
   date: Date;
@@ -22,6 +23,7 @@ type Transaction = {
   status: 'IN' | 'OUT';
 };
 
+type SortableKeys = keyof Transaction;
 type DateRange = 'all' | 'this_month' | 'last_30_days';
 
 export default function ItemTrackingPage() {
@@ -29,6 +31,7 @@ export default function ItemTrackingPage() {
   const [searchTerm, setSearchTerm] = React.useState('');
   const [statusFilter, setStatusFilter] = React.useState<'all' | 'IN' | 'OUT'>('all');
   const [dateFilter, setDateFilter] = React.useState<DateRange>('all');
+  const [sortConfig, setSortConfig] = React.useState<{ key: SortableKeys; direction: 'ascending' | 'descending' } | null>({ key: 'date', direction: 'descending' });
 
   const transactions = React.useMemo(() => {
     const allTransactions: Transaction[] = [];
@@ -66,11 +69,11 @@ export default function ItemTrackingPage() {
       });
     });
 
-    // Sort transactions by date, descending
+    // Initial sort transactions by date, descending
     return allTransactions.sort((a, b) => b.date.getTime() - a.date.getTime());
   }, [purchaseEntries, invoices, products, units, suppliers]);
 
-  const filteredTransactions = React.useMemo(() => {
+  const filteredAndSortedTransactions = React.useMemo(() => {
     let filtered = transactions;
 
     // Apply search term filter
@@ -99,13 +102,29 @@ export default function ItemTrackingPage() {
       filtered = filtered.filter(tx => tx.date >= startDate);
     }
 
+    // Apply sorting
+    if (sortConfig !== null) {
+      filtered.sort((a, b) => {
+        const aValue = a[sortConfig.key];
+        const bValue = b[sortConfig.key];
+
+        if (aValue < bValue) {
+          return sortConfig.direction === 'ascending' ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === 'ascending' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+
     return filtered;
-  }, [transactions, searchTerm, statusFilter, dateFilter]);
+  }, [transactions, searchTerm, statusFilter, dateFilter, sortConfig]);
 
   const stockByUnit = React.useMemo(() => {
     const totals: { [unitName: string]: { stockIn: number; stockOut: number } } = {};
 
-    filteredTransactions.forEach(tx => {
+    filteredAndSortedTransactions.forEach(tx => {
       if (tx.unitName === 'N/A') return; // Skip items with no unit
 
       if (!totals[tx.unitName]) {
@@ -123,7 +142,34 @@ export default function ItemTrackingPage() {
       unitName,
       ...values,
     }));
-  }, [filteredTransactions]);
+  }, [filteredAndSortedTransactions]);
+
+  const requestSort = (key: SortableKeys) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortIndicator = (key: SortableKeys) => {
+    if (!sortConfig || sortConfig.key !== key) {
+      return <ArrowUpDown className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-50" />;
+    }
+    if (sortConfig.direction === 'ascending') {
+      return <span className="ml-2">▲</span>;
+    }
+    return <span className="ml-2">▼</span>;
+  };
+
+  const SortableHeader = ({ sortKey, children }: { sortKey: SortableKeys, children: React.ReactNode }) => (
+    <TableHead>
+        <Button variant="ghost" onClick={() => requestSort(sortKey)} className="group px-0">
+            {children}
+            {getSortIndicator(sortKey)}
+        </Button>
+    </TableHead>
+  );
 
 
   return (
@@ -216,17 +262,22 @@ export default function ItemTrackingPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Item</TableHead>
-                <TableHead>Details</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Quantity</TableHead>
-                <TableHead>Unit</TableHead>
+                <SortableHeader sortKey="date">Date</SortableHeader>
+                <SortableHeader sortKey="productName">Item</SortableHeader>
+                <SortableHeader sortKey="details">Details</SortableHeader>
+                <SortableHeader sortKey="status">Status</SortableHeader>
+                <TableHead className="text-right">
+                  <Button variant="ghost" onClick={() => requestSort('quantity')} className="group px-0 w-full justify-end">
+                      Quantity
+                      {getSortIndicator('quantity')}
+                  </Button>
+                </TableHead>
+                <SortableHeader sortKey="unitName">Unit</SortableHeader>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredTransactions.length > 0 ? (
-                filteredTransactions.map((tx, index) => (
+              {filteredAndSortedTransactions.length > 0 ? (
+                filteredAndSortedTransactions.map((tx, index) => (
                   <TableRow key={index}>
                     <TableCell className="font-medium">{new Date(tx.date).toLocaleDateString()}</TableCell>
                     <TableCell>{tx.productName}</TableCell>
