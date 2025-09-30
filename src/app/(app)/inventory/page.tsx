@@ -62,7 +62,7 @@ export default function InventoryPage() {
   return (
     <>
       <div className="flex items-center">
-        <h1 className="font-semibold text-lg md:text-2xl">Inventory</h1>
+        <h1 className="font-semibold text-lg md:text-2xl">Product Master</h1>
         <div className="ml-auto flex items-center gap-2">
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>

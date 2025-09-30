@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, FileText, Settings, Warehouse, ShoppingCart, Ruler, History, Users, Truck, Folder } from 'lucide-react';
+import { LayoutDashboard, FileText, Settings, Warehouse, ShoppingCart, Ruler, History, Users, Truck, Folder, Package } from 'lucide-react';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from './ui/tooltip';
 
 export function MainNav({ isCollapsed }: { isCollapsed: boolean }) {
@@ -37,8 +37,8 @@ export function MainNav({ isCollapsed }: { isCollapsed: boolean }) {
     },
     {
       href: '/inventory',
-      label: 'Inventory',
-      icon: Warehouse,
+      label: 'Product Master',
+      icon: Package,
       isActive: pathname === '/inventory',
     },
     {
