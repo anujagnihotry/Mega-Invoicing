@@ -358,6 +358,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const addCategory = useCallback((category: Category) => {
     setCategories(prev => [...prev, category]);
   }, [setCategories]);
+
+  const updateCategory = useCallback((category: Category) => {
+    setCategories(prev => prev.map(c => c.id === category.id ? category : c));
+  }, [setCategories]);
+  
+  const deleteCategory = useCallback((categoryId: string) => {
+    setCategories(prev => prev.filter(c => c.id !== categoryId));
+  }, [setCategories]);
   
   const addTax = useCallback((tax: Omit<Tax, 'id'>) => {
     const newTax: Tax = { id: generateId(), ...tax };
@@ -419,6 +427,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     addUnit,
     categories,
     addCategory,
+    updateCategory,
+    deleteCategory,
     getAvailableStock,
     addTax,
     updateTax,

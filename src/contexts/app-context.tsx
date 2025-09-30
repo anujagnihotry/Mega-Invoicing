@@ -22,6 +22,8 @@ export interface AppContextType {
   addUnit: (unit: Unit) => void;
   categories: Category[];
   addCategory: (category: Category) => void;
+  updateCategory: (category: Category) => void;
+  deleteCategory: (categoryId: string) => void;
   getAvailableStock: (productId: string, currentInvoiceId?: string) => number;
   addTax: (tax: Omit<Tax, 'id'>) => void;
   updateTax: (tax: Tax) => void;
