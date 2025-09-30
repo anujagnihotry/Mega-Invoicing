@@ -40,7 +40,7 @@ import Link from 'next/link';
 const purchaseEntryItemSchema = z.object({
     productId: z.string().min(1, 'Please select a product.'),
     quantityReceived: z.coerce.number().min(0, 'Quantity must be 0 or more.'),
-    orderedQuantity: z.number().optional(), // Original quantity from PO
+    orderedQuantity: z.number().readonly().optional(), // Original quantity from PO, not to be modified
 }).refine(data => data.orderedQuantity === undefined || data.quantityReceived <= data.orderedQuantity, {
     message: "Cannot receive more than the ordered quantity.",
     path: ["quantityReceived"],
@@ -304,7 +304,7 @@ export default function NewPurchaseEntryPage() {
                         </TableCell>
                          {watchedPurchaseOrderId !== MANUAL_ENTRY_VALUE && (
                             <TableCell>
-                                <span className="text-muted-foreground">{currentItem?.orderedQuantity}</span>
+                                <Input type="number" value={currentItem?.orderedQuantity} readOnly className="border-none bg-transparent" />
                             </TableCell>
                         )}
                         <TableCell>
@@ -318,14 +318,14 @@ export default function NewPurchaseEntryPage() {
                                     step="any" {...formField} 
                                     max={field.orderedQuantity} 
                                 />
-                                <FormMessage />
+                                {form.formState.errors.items?.[index]?.quantityReceived && <FormMessage />}
                                 </>
                             )}
                             />
                         </TableCell>
                         {watchedPurchaseOrderId !== MANUAL_ENTRY_VALUE && (
                             <TableCell>
-                                <span className={cn("text-muted-foreground", { 'text-destructive': pending < 0 })}>{pending}</span>
+                                 <Input type="number" value={pending} readOnly className={cn("border-none bg-transparent", { 'text-destructive': pending < 0 })} />
                             </TableCell>
                         )}
                         <TableCell className="text-right">
@@ -365,5 +365,3 @@ export default function NewPurchaseEntryPage() {
     </div>
   );
 }
-
-    
