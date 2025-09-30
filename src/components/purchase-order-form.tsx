@@ -33,6 +33,7 @@ const purchaseOrderFormSchema = z.object({
   items: z.array(z.object({
     productId: z.string().min(1, 'Please select a product.'),
     quantity: z.coerce.number().gt(0, 'Quantity must be greater than 0'),
+    quantityReceived: z.coerce.number().min(0, 'Received quantity cannot be negative'),
     price: z.coerce.number().gt(0, 'Price must be greater than 0'),
   })).min(1, 'At least one item is required'),
 });
@@ -71,7 +72,10 @@ export function PurchaseOrderForm({ purchaseOrder }: PurchaseOrderFormProps) {
         ...purchaseOrder,
         orderDate: new Date(purchaseOrder.date),
         expectedDeliveryDate: purchaseOrder.expectedDeliveryDate ? new Date(purchaseOrder.expectedDeliveryDate) : undefined,
-        items: purchaseOrder.items,
+        items: purchaseOrder.items.map(item => ({
+            ...item,
+            quantityReceived: item.quantityReceived || 0 // ensure it exists
+        })),
       });
     }
   }, [purchaseOrder, form]);
@@ -98,7 +102,12 @@ export function PurchaseOrderForm({ purchaseOrder }: PurchaseOrderFormProps) {
       expectedDeliveryDate: values.expectedDeliveryDate?.toISOString(),
       notes: values.notes,
       status: values.status,
-      items: values.items.map(item => ({...item, id: (item as any).id || undefined})),
+      items: values.items.map(item => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          quantityReceived: item.quantityReceived,
+          price: item.price
+      })),
       totalAmount: totalAmount,
     };
     
@@ -107,7 +116,7 @@ export function PurchaseOrderForm({ purchaseOrder }: PurchaseOrderFormProps) {
         toast({ title: "Success", description: "Purchase order updated." });
         router.push(`/suppliers/${purchaseOrder.supplierId}/view`);
     } else {
-        addPurchaseOrder(poData);
+        addPurchaseOrder(poData as Omit<PurchaseOrder, 'id'>);
         toast({ title: "Success", description: "Purchase order created." });
         router.push('/suppliers');
     }
@@ -255,7 +264,7 @@ export function PurchaseOrderForm({ purchaseOrder }: PurchaseOrderFormProps) {
                         <CardTitle>Items</CardTitle>
                         <Button
                             type="button"
-                            onClick={() => append({ productId: '', quantity: 1, price: 0 })}
+                            onClick={() => append({ productId: '', quantity: 1, quantityReceived: 0, price: 0 })}
                             >
                             <PlusCircle className="mr-2 h-4 w-4" />
                             Add Item

@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { AppContext, AppContextType } from '@/contexts/app-context';
 import useLocalStorage from '@/hooks/use-local-storage';
-import type { Invoice, AppSettings, Product, PurchaseOrder, Unit, Tax, Supplier, PurchaseEntry, Category } from '@/lib/types';
+import type { Invoice, AppSettings, Product, PurchaseOrder, Unit, Tax, Supplier, PurchaseEntry, Category, PurchaseOrderStatus } from '@/lib/types';
 import { generateId, formatCurrency } from '@/lib/utils';
 import { useUser } from '@/firebase';
 import { sendEmail } from '@/ai/flows/send-email';
@@ -356,6 +356,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const newPurchaseOrder: PurchaseOrder = {
       id: generateId(),
       ...purchaseOrderData,
+      items: purchaseOrderData.items.map(item => ({...item, quantityReceived: 0 })),
     };
     setPurchaseOrders(prev => [...prev, newPurchaseOrder]);
   }, [setPurchaseOrders]);
@@ -422,7 +423,39 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const addPurchaseEntry = useCallback((entry: Omit<PurchaseEntry, 'id'>) => {
     const newEntry: PurchaseEntry = { id: generateId(), ...entry };
     setPurchaseEntries(prev => [...prev, newEntry]);
-  }, [setPurchaseEntries]);
+
+    // If the entry is linked to a PO, update the PO's received quantities and status
+    if (entry.purchaseOrderId) {
+      setPurchaseOrders(prevPOs => {
+        return prevPOs.map(po => {
+          if (po.id === entry.purchaseOrderId) {
+            const updatedItems = po.items.map(poItem => {
+              const entryItem = entry.items.find(ei => ei.productId === poItem.productId);
+              if (entryItem) {
+                return {
+                  ...poItem,
+                  quantityReceived: poItem.quantityReceived + entryItem.quantityReceived,
+                };
+              }
+              return poItem;
+            });
+
+            let newStatus: PurchaseOrderStatus = 'Partially Fulfilled';
+            const allItemsFulfilled = updatedItems.every(item => item.quantityReceived >= item.quantity);
+            if (allItemsFulfilled) {
+              newStatus = 'Completed';
+            }
+            if (po.status === 'Cancelled' || po.status === 'Completed') {
+              newStatus = po.status;
+            }
+
+            return { ...po, items: updatedItems, status: newStatus };
+          }
+          return po;
+        });
+      });
+    }
+  }, [setPurchaseEntries, setPurchaseOrders]);
 
   const contextValue: AppContextType = {
     isLoading: isUserLoading,

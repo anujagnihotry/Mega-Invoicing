@@ -95,6 +95,13 @@ export type Product = {
 
 export type PurchaseOrderStatus = 'Pending' | 'Completed' | 'Cancelled' | 'Partially Fulfilled';
 
+export type PurchaseOrderItem = {
+    productId: string;
+    quantity: number;
+    quantityReceived: number;
+    price: number;
+};
+
 export type PurchaseOrder = {
   id: string;
   poNumber: string;
@@ -104,11 +111,7 @@ export type PurchaseOrder = {
   supplierId: string;
   expectedDeliveryDate?: string;
   notes?: string;
-  items: {
-    productId: string;
-    quantity: number;
-    price: number;
-  }[];
+  items: PurchaseOrderItem[];
   totalAmount: number;
   status: PurchaseOrderStatus;
 };

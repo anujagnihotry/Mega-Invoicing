@@ -1,6 +1,6 @@
 
 import { createContext } from 'react';
-import type { Invoice, AppSettings, Product, PurchaseOrder, Unit, Tax, Supplier, PurchaseEntry, Category } from '@/lib/types';
+import type { Invoice, AppSettings, Product, PurchaseOrder, Unit, Tax, Supplier, PurchaseEntry, Category, PurchaseOrderItem } from '@/lib/types';
 
 export interface AppContextType {
   isLoading: boolean;
@@ -13,7 +13,7 @@ export interface AppContextType {
   updateSettings: (newSettings: Partial<AppSettings>) => void;
   products: Product[];
   purchaseOrders: PurchaseOrder[];
-  addPurchaseOrder: (purchaseOrder: Omit<PurchaseOrder, 'id'>) => void;
+  addPurchaseOrder: (purchaseOrder: Omit<PurchaseOrder, 'id' | 'items'> & { items: Omit<PurchaseOrderItem, 'quantityReceived'>[] }) => void;
   updatePurchaseOrder: (purchaseOrder: PurchaseOrder) => void;
   deletePurchaseOrder: (purchaseOrderId: string) => void;
   getPurchaseOrder: (id: string) => PurchaseOrder | undefined;

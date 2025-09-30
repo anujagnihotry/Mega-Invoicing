@@ -36,17 +36,25 @@ import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
+const purchaseEntryItemSchema = z.object({
+    productId: z.string().min(1, 'Please select a product.'),
+    quantityReceived: z.coerce.number().gt(0, 'Quantity must be greater than 0'),
+    maxQuantity: z.number().optional(), // For validation, not part of final data
+});
+
 const purchaseEntrySchema = z.object({
   purchaseOrderId: z.string().optional(),
   supplierId: z.string().min(1, 'Supplier is required'),
   entryDate: z.date({ required_error: 'Entry date is required' }),
   notes: z.string().optional(),
   status: z.enum(['Draft', 'Completed']),
-  items: z.array(z.object({
-    productId: z.string().min(1, 'Please select a product.'),
-    quantityReceived: z.coerce.number().gt(0, 'Quantity must be greater than 0'),
-  })).min(1, 'At least one item is required'),
+  items: z.array(purchaseEntryItemSchema)
+    .min(1, 'At least one item is required')
+    .refine(items => items.every(item => item.maxQuantity === undefined || item.quantityReceived <= item.maxQuantity), {
+        message: 'Cannot receive more items than were ordered.',
+    }),
 });
+
 
 const MANUAL_ENTRY_VALUE = 'manual';
 
@@ -86,10 +94,16 @@ export default function NewPurchaseEntryPage() {
     if (watchedPurchaseOrderId && watchedPurchaseOrderId !== MANUAL_ENTRY_VALUE) {
       const selectedPO = purchaseOrders.find(po => po.id === watchedPurchaseOrderId);
       if (selectedPO) {
-        const newItems = selectedPO.items.map(item => ({
-          productId: item.productId,
-          quantityReceived: item.quantity,
-        }));
+        const newItems = selectedPO.items
+            .filter(item => item.quantity > item.quantityReceived) // Only show items that are not fully received
+            .map(item => {
+                const pendingQty = item.quantity - item.quantityReceived;
+                return {
+                    productId: item.productId,
+                    quantityReceived: pendingQty,
+                    maxQuantity: pendingQty,
+                }
+        });
         replace(newItems);
       }
     } else {
@@ -98,8 +112,10 @@ export default function NewPurchaseEntryPage() {
   }, [watchedPurchaseOrderId, purchaseOrders, replace]);
 
   const onSubmit = (values: z.infer<typeof purchaseEntrySchema>) => {
+    const finalItems = values.items.map(({ maxQuantity, ...item }) => item);
     addPurchaseEntry({
       ...values,
+      items: finalItems,
       purchaseOrderId: values.purchaseOrderId === MANUAL_ENTRY_VALUE ? undefined : values.purchaseOrderId,
       entryDate: values.entryDate.toISOString(),
     });
@@ -227,16 +243,20 @@ export default function NewPurchaseEntryPage() {
             <CardHeader>
                 <div className="flex justify-between items-center">
                     <CardTitle>Received Items</CardTitle>
-                    <Button
-                        type="button"
-                        onClick={() => append({ productId: '', quantityReceived: 1 })}
-                    >
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Add Item
-                    </Button>
+                    {watchedPurchaseOrderId === MANUAL_ENTRY_VALUE && (
+                        <Button
+                            type="button"
+                            onClick={() => append({ productId: '', quantityReceived: 1 })}
+                        >
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Add Item
+                        </Button>
+                    )}
                 </div>
                 <CardDescription>
-                    List all items and quantities received in this shipment.
+                    {watchedPurchaseOrderId === MANUAL_ENTRY_VALUE 
+                        ? 'List all items and quantities received in this shipment.' 
+                        : 'Review the quantities received from the purchase order.'}
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -245,6 +265,7 @@ export default function NewPurchaseEntryPage() {
                   <TableRow>
                     <TableHead className="w-3/5">Item Name</TableHead>
                     <TableHead>Quantity Received</TableHead>
+                     {watchedPurchaseOrderId !== MANUAL_ENTRY_VALUE && <TableHead>Pending</TableHead>}
                     <TableHead className="text-right">Action</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -255,8 +276,8 @@ export default function NewPurchaseEntryPage() {
                         <FormField
                           control={form.control}
                           name={`items.${index}.productId`}
-                          render={({ field }) => (
-                            <Select onValueChange={field.onChange} value={field.value}>
+                          render={({ field: formField }) => (
+                            <Select onValueChange={formField.onChange} value={formField.value} disabled={watchedPurchaseOrderId !== MANUAL_ENTRY_VALUE}>
                               <FormControl>
                                 <SelectTrigger>
                                   <SelectValue placeholder="Select an item..." />
@@ -275,15 +296,26 @@ export default function NewPurchaseEntryPage() {
                         <FormField
                           control={form.control}
                           name={`items.${index}.quantityReceived`}
-                          render={({ field }) => (
-                            <Input type="number" step="any" {...field} />
+                          render={({ field: formField }) => (
+                            <Input 
+                                type="number" 
+                                step="any" {...formField} 
+                                max={field.maxQuantity} 
+                            />
                           )}
                         />
                       </TableCell>
+                       {watchedPurchaseOrderId !== MANUAL_ENTRY_VALUE && (
+                            <TableCell>
+                                <span className="text-muted-foreground">{field.maxQuantity}</span>
+                            </TableCell>
+                        )}
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" onClick={() => remove(index)}>
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                        {watchedPurchaseOrderId === MANUAL_ENTRY_VALUE && (
+                            <Button variant="ghost" size="icon" onClick={() => remove(index)}>
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
