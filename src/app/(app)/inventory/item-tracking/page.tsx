@@ -228,7 +228,7 @@ export default function ItemTrackingPage() {
               {filteredTransactions.length > 0 ? (
                 filteredTransactions.map((tx, index) => (
                   <TableRow key={index}>
-                    <TableCell className="font-medium">{tx.date.toLocaleDateString()}</TableCell>
+                    <TableCell className="font-medium">{new Date(tx.date).toLocaleDateString()}</TableCell>
                     <TableCell>{tx.productName}</TableCell>
                     <TableCell>{tx.details}</TableCell>
                     <TableCell>
