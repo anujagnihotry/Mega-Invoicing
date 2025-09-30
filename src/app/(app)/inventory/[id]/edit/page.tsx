@@ -33,25 +33,32 @@ export default function EditProductPage() {
 
     const form = useForm<z.infer<typeof productFormSchema>>({
         resolver: zodResolver(productFormSchema),
-        defaultValues: {
-            name: '',
-            price: 0,
-            unitId: '',
-            categoryId: '',
-            thresholdValue: 0,
-        },
+        // Default values are set here, but will be overwritten by useEffect
+        defaultValues: product ? { 
+            ...product, 
+            categoryId: product.categoryId || '',
+            thresholdValue: product.thresholdValue || 0,
+        } : {},
     });
 
     React.useEffect(() => {
         if (product) {
             form.reset({
               ...product,
-              categoryId: product.categoryId || '', // Ensure categoryId is a string
+              categoryId: product.categoryId || '',
+              thresholdValue: product.thresholdValue || 0,
             });
         } else if (productId) {
-            setTimeout(() => router.replace('/inventory'), 500);
+            // If product is not found after some time, it probably doesn't exist
+            const timer = setTimeout(() => {
+                if (!getProduct(productId)) {
+                    toast({ variant: 'destructive', title: 'Error', description: 'Product not found.' });
+                    router.replace('/inventory');
+                }
+            }, 1000);
+            return () => clearTimeout(timer);
         }
-    }, [product, productId, form, router]);
+    }, [product, productId, form, router, getProduct, toast]);
 
     const onSubmit = (values: z.infer<typeof productFormSchema>) => {
         if (!product) return;
@@ -135,7 +142,7 @@ export default function EditProductPage() {
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Category (Optional)</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value}>
+                                        <Select onValueChange={field.onChange} value={field.value || ''}>
                                             <FormControl>
                                             <SelectTrigger>
                                                 <SelectValue placeholder="Select a category" />
