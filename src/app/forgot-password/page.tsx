@@ -62,10 +62,10 @@ export default function ForgotPasswordPage() {
         </div>
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Forgot Password</CardTitle>
+          <CardTitle className="text-2xl">{isSent ? 'Password Changed' : 'Forgot Password'}</CardTitle>
           <CardDescription>
             {isSent 
-              ? "Password reset email sent."
+              ? "You can now sign in with your new password"
               : "Enter your email and we'll send you a link to reset your password."
             }
           </CardDescription>
@@ -90,9 +90,6 @@ export default function ForgotPasswordPage() {
             </form>
           ) : (
             <div className="text-center space-y-4">
-                <p className="text-muted-foreground">
-                    You can now sign in with your new password once you have reset it using the link in your email.
-                </p>
                 <Button onClick={() => router.push('/login')} className="w-full">Login</Button>
             </div>
           )}
