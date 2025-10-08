@@ -15,10 +15,12 @@ import { sendPasswordResetEmail } from 'firebase/auth';
 import useLocalStorage from '@/hooks/use-local-storage';
 import { AppSettings } from '@/lib/types';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 export default function ForgotPasswordPage() {
   const auth = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSent, setIsSent] = useState(false);
@@ -63,7 +65,7 @@ export default function ForgotPasswordPage() {
           <CardTitle className="text-2xl">Forgot Password</CardTitle>
           <CardDescription>
             {isSent 
-              ? "Check your inbox for a reset link."
+              ? "Password reset email sent."
               : "Enter your email and we'll send you a link to reset your password."
             }
           </CardDescription>
@@ -87,11 +89,11 @@ export default function ForgotPasswordPage() {
               </Button>
             </form>
           ) : (
-            <div className="text-center">
-                <p className="text-muted-foreground mb-4">
-                    Didn't receive an email? Check your spam folder or try again.
+            <div className="text-center space-y-4">
+                <p className="text-muted-foreground">
+                    You can now sign in with your new password once you have reset it using the link in your email.
                 </p>
-                <Button onClick={() => setIsSent(false)}>Try Again</Button>
+                <Button onClick={() => router.push('/login')} className="w-full">Login</Button>
             </div>
           )}
           <div className="mt-4 text-center text-sm">
