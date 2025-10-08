@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -12,6 +13,7 @@ import { sendEmail } from '@/ai/flows/send-email';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { APP_NAME } from '@/lib/constants';
 
 declare module 'jspdf' {
     interface jsPDF {
@@ -21,6 +23,8 @@ declare module 'jspdf' {
 
 
 const defaultSettings: AppSettings = {
+  appName: APP_NAME,
+  appLogo: '',
   currency: 'USD',
   companyProfile: {
     name: 'Your Company',

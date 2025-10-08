@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -12,6 +13,8 @@ import { APP_NAME } from '@/lib/constants';
 import { FileText } from 'lucide-react';
 import { useAuth } from '@/firebase';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import useLocalStorage from '@/hooks/use-local-storage';
+import { AppSettings } from '@/lib/types';
 
 export default function SignupPage() {
   const auth = useAuth();
@@ -22,6 +25,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [settings] = useLocalStorage<AppSettings>('settings', { appName: APP_NAME } as AppSettings);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,7 +57,7 @@ export default function SignupPage() {
     <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-muted/40">
       <div className="absolute top-8 left-8 flex items-center gap-2 text-2xl font-bold text-foreground">
         <FileText className="h-8 w-8 text-primary" />
-        <span>{APP_NAME}</span>
+        <span>{settings.appName || APP_NAME}</span>
       </div>
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center">

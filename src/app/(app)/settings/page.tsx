@@ -15,15 +15,18 @@ import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { MoreHorizontal, PlusCircle, Trash2, Pencil } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Trash2, Pencil, Image as ImageIcon } from 'lucide-react';
 import type { AppSettings, Tax } from '@/lib/types';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Switch } from '@/components/ui/switch';
+import Image from 'next/image';
 
 const currencies = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'INR'];
 
 const settingsSchema = z.object({
+  appName: z.string().min(1, 'Application name is required'),
+  appLogo: z.string().url('Must be a valid URL').optional().or(z.literal('')),
   currency: z.string().min(1, 'Currency is required'),
   companyProfile: z.object({
     name: z.string().min(1, 'Company name is required'),
@@ -113,6 +116,7 @@ export default function SettingsPage() {
   }
 
   const currentTaxes = settings.taxes || [];
+  const appLogo = form.watch('appLogo');
 
   return (
     <div className="space-y-8">
@@ -192,7 +196,42 @@ export default function SettingsPage() {
                       <CardTitle>Preferences</CardTitle>
                       <CardDescription>Customize application settings.</CardDescription>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="appName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Application Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="SwiftInvoice" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                       <FormField
+                        control={form.control}
+                        name="appLogo"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Application Logo URL</FormLabel>
+                            <div className="flex items-center gap-4">
+                               <div className="w-16 h-16 rounded-md border flex items-center justify-center bg-muted">
+                                {appLogo ? (
+                                    <Image src={appLogo} alt="App Logo" width={64} height={64} className="object-contain rounded-md" />
+                                ) : (
+                                    <ImageIcon className="w-8 h-8 text-muted-foreground" />
+                                )}
+                               </div>
+                              <FormControl>
+                                <Input placeholder="https://example.com/logo.png" {...field} />
+                              </FormControl>
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                       <FormField
                       control={form.control}
                       name="currency"

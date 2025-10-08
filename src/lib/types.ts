@@ -59,6 +59,8 @@ export type EmailSettings = {
 };
 
 export type AppSettings = {
+  appName: string;
+  appLogo?: string;
   currency: string;
   companyProfile: CompanyProfile;
   defaultTaxRule: 'per-item' | 'per-bill';
