@@ -32,7 +32,9 @@ export default function ForgotPasswordPage() {
     setIsLoading(true);
 
     try {
-      await sendPasswordResetEmail(auth, email);
+      await sendPasswordResetEmail(auth, email, {
+        url: `${window.location.origin}/auth/action`,
+      });
       toast({
         title: 'Check your email',
         description: 'A password reset link has been sent to your email address.',
@@ -62,10 +64,10 @@ export default function ForgotPasswordPage() {
         </div>
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">{isSent ? 'Password Changed' : 'Forgot Password'}</CardTitle>
+          <CardTitle className="text-2xl">{isSent ? 'Check Your Inbox' : 'Forgot Password'}</CardTitle>
           <CardDescription>
             {isSent 
-              ? "You can now sign in with your new password"
+              ? `We've sent a password reset link to ${email}.`
               : "Enter your email and we'll send you a link to reset your password."
             }
           </CardDescription>
@@ -90,7 +92,8 @@ export default function ForgotPasswordPage() {
             </form>
           ) : (
             <div className="text-center space-y-4">
-                <Button onClick={() => router.push('/login')} className="w-full">Login</Button>
+                <p className="text-sm text-muted-foreground">Didn't receive the email? Check your spam folder or try again.</p>
+                <Button onClick={() => router.push('/login')} className="w-full">Back to Login</Button>
             </div>
           )}
           <div className="mt-4 text-center text-sm">
