@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -15,6 +14,7 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import useLocalStorage from '@/hooks/use-local-storage';
 import { AppSettings } from '@/lib/types';
 import { APP_NAME } from '@/lib/constants';
+import Image from 'next/image';
 
 export default function LoginPage() {
   const auth = useAuth();
@@ -54,7 +54,11 @@ export default function LoginPage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-muted/40">
        <div className="absolute top-8 left-8 flex items-center gap-2 text-2xl font-bold text-foreground">
-          <FileText className="h-8 w-8 text-primary" />
+          {settings.appLogo ? (
+            <Image src={settings.appLogo} alt={settings.appName} width={32} height={32} className="h-8 w-8" />
+          ) : (
+            <FileText className="h-8 w-8 text-primary" />
+          )}
           <span>{settings.appName || APP_NAME}</span>
         </div>
       <Card className="w-full max-w-md shadow-lg">
