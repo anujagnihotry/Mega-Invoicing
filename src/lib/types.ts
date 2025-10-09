@@ -32,6 +32,7 @@ export type Invoice = {
   };
   taxId?: string | null;
   taxAmount?: number;
+  notes?: string;
 };
 
 export type CompanyProfile = {

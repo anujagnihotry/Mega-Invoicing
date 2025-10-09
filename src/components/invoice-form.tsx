@@ -23,6 +23,7 @@ import { InvoiceReadabilityModal } from './invoice-readability-modal';
 import { InvoiceItemRow } from './invoice-item-row';
 import { useEffect, useMemo } from 'react';
 import { Separator } from './ui/separator';
+import { Textarea } from './ui/textarea';
 
 const lineItemSchema = z.object({
   id: z.string().optional(),
@@ -42,6 +43,7 @@ const formSchema = z.object({
   status: z.enum(['Draft', 'Sent', 'Paid', 'Cancelled']),
   items: z.array(lineItemSchema).min(1, 'At least one item is required'),
   taxId: z.string().nullable().optional(),
+  notes: z.string().optional(),
 });
 
 type InvoiceFormProps = {
@@ -88,6 +90,7 @@ export function InvoiceForm({ invoice }: InvoiceFormProps) {
     status: 'Draft' as InvoiceStatus,
     items: [],
     taxId: settings.taxes.length > 0 ? settings.taxes[0].id : null,
+    notes: 'Thank you for your business. Please pay within the due date.',
   };
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -382,57 +385,75 @@ export function InvoiceForm({ invoice }: InvoiceFormProps) {
           </CardContent>
         </Card>
         
-        <div className="flex justify-end">
-          <Card className="w-full max-w-sm">
-             <CardContent className="p-4 space-y-4">
-                <div className="space-y-2">
-                    <div className="flex justify-between">
-                        <span>Subtotal</span>
-                        <span>{formatCurrency(subtotal, settings.currency)}</span>
-                    </div>
-                    {settings.taxes.length > 0 && (
-                      <FormField
-                        control={form.control}
-                        name="taxId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <div className="flex justify-between items-center">
-                              <FormLabel className="flex-1">Tax</FormLabel>
-                              <Select 
-                                  onValueChange={field.onChange} 
-                                  value={field.value ?? undefined}
-                              >
-                                  <FormControl>
-                                  <SelectTrigger className="w-40">
-                                      <SelectValue placeholder="Select Tax" />
-                                  </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                      {settings.taxes.map((tax: Tax) => (
-                                          <SelectItem key={tax.id} value={tax.id}>{tax.name} ({tax.rate}%)</SelectItem>
-                                      ))}
-                                  </SelectContent>
-                              </Select>
-                            </div>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+        <div className="flex justify-between items-start gap-8">
+            <div className="w-1/2">
+                <FormField
+                    control={form.control}
+                    name="notes"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Notes</FormLabel>
+                        <FormControl>
+                            <Textarea
+                                placeholder="Add any notes for the client..."
+                                {...field}
+                            />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
                     )}
-                     {tax && (
-                         <div className="flex justify-between">
-                            <span className="text-muted-foreground">{tax.name} ({tax.rate}%)</span>
-                            <span>{formatCurrency(taxAmount, settings.currency)}</span>
+                />
+            </div>
+            <Card className="w-full max-w-sm">
+                <CardContent className="p-4 space-y-4">
+                    <div className="space-y-2">
+                        <div className="flex justify-between">
+                            <span>Subtotal</span>
+                            <span>{formatCurrency(subtotal, settings.currency)}</span>
                         </div>
-                    )}
-                </div>
-                <Separator />
-                <div className="flex justify-between text-lg font-semibold">
-                    <span>Total</span>
-                    <span>{formatCurrency(total, settings.currency)}</span>
-                </div>
-             </CardContent>
-          </Card>
+                        {settings.taxes.length > 0 && (
+                        <FormField
+                            control={form.control}
+                            name="taxId"
+                            render={({ field }) => (
+                            <FormItem>
+                                <div className="flex justify-between items-center">
+                                <FormLabel className="flex-1">Tax</FormLabel>
+                                <Select 
+                                    onValueChange={field.onChange} 
+                                    value={field.value ?? undefined}
+                                >
+                                    <FormControl>
+                                    <SelectTrigger className="w-40">
+                                        <SelectValue placeholder="Select Tax" />
+                                    </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        {settings.taxes.map((tax: Tax) => (
+                                            <SelectItem key={tax.id} value={tax.id}>{tax.name} ({tax.rate}%)</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                </div>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        )}
+                        {tax && (
+                            <div className="flex justify-between">
+                                <span className="text-muted-foreground">{tax.name} ({tax.rate}%)</span>
+                                <span>{formatCurrency(taxAmount, settings.currency)}</span>
+                            </div>
+                        )}
+                    </div>
+                    <Separator />
+                    <div className="flex justify-between text-lg font-semibold">
+                        <span>Total</span>
+                        <span>{formatCurrency(total, settings.currency)}</span>
+                    </div>
+                </CardContent>
+            </Card>
         </div>
       </form>
     </Form>

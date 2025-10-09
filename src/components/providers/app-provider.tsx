@@ -84,7 +84,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [purchaseOrders]);
 
   const getProduct = useCallback((id: string): Product | undefined => {
-    return products.find(p => p.id === id);
+    return products.find(p => p.id === productId);
   }, [products]);
 
   const getAvailableStock = useCallback((productId: string, currentInvoiceId?: string) => {
@@ -270,7 +270,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             <tr>
               <td>
                 <p style="font-weight: bold; font-size: 14px; margin: 20px 0 5px 0;">Notes</p>
-                <p style="font-size: 12px; color: #666; margin: 0;">Thank you for your business. Please pay within the due date.</p>
+                <p style="font-size: 12px; color: #666; margin: 0;">${newInvoice.notes || 'Thank you for your business. Please pay within the due date.'}</p>
               </td>
             </tr>
           </table>
@@ -320,7 +320,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               formatCurrency(item.price, newInvoice!.currency),
               formatCurrency(item.quantity * item.price, newInvoice!.currency),
           ]),
-          headStyles: { fillColor: [248, 249, 250], textColor: 50 },
+          headStyles: { fillColor: [248, 249, 250], textColor: 50, fontStyle: 'normal' },
           styles: { halign: 'left' },
           columnStyles: {
               1: { halign: 'center' },
@@ -357,7 +357,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       doc.setFont('helvetica', 'bold');
       doc.text('Notes', 14, summaryY + 20);
       doc.setFont('helvetica', 'normal');
-      doc.text('Thank you for your business. Please pay within the due date.', 14, summaryY + 25);
+      doc.text(newInvoice.notes || 'Thank you for your business. Please pay within the due date.', 14, summaryY + 25);
 
       const pdfBase64 = doc.output('datauristring').split(',')[1];
       

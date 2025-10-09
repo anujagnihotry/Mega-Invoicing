@@ -4,7 +4,7 @@ import type { Invoice, AppSettings, Product, Unit } from '@/lib/types';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 
@@ -70,7 +70,15 @@ export function InvoiceDisplay({ invoice, settings, products, units }: InvoiceDi
               <span className="font-semibold">Due Date</span>
               <span>{new Date(invoice.dueDate).toLocaleDateString()}</span>
             </div>
-            <Badge className="mt-4 text-base" variant={invoice.status === 'Paid' ? 'default' : 'destructive'}>{invoice.status}</Badge>
+             <div className="flex justify-end mt-2">
+              <Badge className={cn(
+                  "text-base",
+                  {'bg-yellow-500 text-white': invoice.status === 'Draft'},
+                  {'bg-blue-500 text-white': invoice.status === 'Sent'},
+                  {'bg-green-600 text-white': invoice.status === 'Paid'},
+                  {'bg-red-600 text-white': invoice.status === 'Cancelled'}
+              )}>{invoice.status}</Badge>
+            </div>
           </div>
         </div>
 
@@ -79,11 +87,11 @@ export function InvoiceDisplay({ invoice, settings, products, units }: InvoiceDi
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[40%] text-left uppercase">Item</TableHead>
-              <TableHead className="text-center uppercase">Quantity</TableHead>
-              <TableHead className="text-center uppercase">Unit</TableHead>
-              <TableHead className="text-right uppercase">Price</TableHead>
-              <TableHead className="text-right uppercase">Amount</TableHead>
+              <TableHead className="w-[40%] text-left uppercase text-muted-foreground">Item</TableHead>
+              <TableHead className="text-center uppercase text-muted-foreground">Quantity</TableHead>
+              <TableHead className="text-center uppercase text-muted-foreground">Unit</TableHead>
+              <TableHead className="text-right uppercase text-muted-foreground">Price</TableHead>
+              <TableHead className="text-right uppercase text-muted-foreground">Amount</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -121,7 +129,7 @@ export function InvoiceDisplay({ invoice, settings, products, units }: InvoiceDi
 
         <div className="mt-16">
           <h3 className="font-semibold">Notes</h3>
-          <p className="text-muted-foreground text-sm">Thank you for your business. Please pay within the due date.</p>
+          <p className="text-muted-foreground text-sm">{invoice.notes || 'Thank you for your business. Please pay within the due date.'}</p>
         </div>
       </CardContent>
     </Card>
