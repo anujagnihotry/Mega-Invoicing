@@ -62,7 +62,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!isUserLoading) {
-      const isAuthPage = ['/login', '/signup', '/forgot-password'].includes(pathname);
+      const isAuthPage = ['/login', '/signup', '/forgot-password', '/auth/action'].includes(pathname);
       if (!user && !isAuthPage) {
         router.replace('/login');
       } else if (user && isAuthPage) {
@@ -251,12 +251,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               description: `Invoice sent to ${newInvoice?.clientEmail}.`,
           });
       }).catch(err => {
-           toast({
-              variant: 'destructive',
-              title: 'Email Failed to Send',
-              description: 'Please check your SMTP settings. If using Gmail, you may need to use an "App Password".',
-          });
-          console.error(err);
+            const errorMessage = (err as Error).message || '';
+            let description = 'Please check your SMTP settings and try again.';
+            if (errorMessage.includes('Application-specific password required')) {
+                description = 'Your email provider requires an "App Password" for SMTP. Please generate one in your account settings and update it in the app.';
+            } else if (errorMessage.includes('Invalid login')) {
+                description = 'Invalid SMTP credentials. Please check the username and password in settings.';
+            }
+            
+            toast({
+                variant: 'destructive',
+                title: 'Email Failed to Send',
+                description: description,
+            });
+            console.error(err);
       })
     }
 
