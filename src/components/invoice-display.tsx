@@ -97,7 +97,7 @@ export function InvoiceDisplay({ invoice, settings, products, units }: InvoiceDi
           <TableBody>
             {invoice.items.map((item) => (
               <TableRow key={item.id} className="border-b">
-                <TableCell className="font-medium py-3">{getItemDescription(item.productId)}</TableCell>
+                <TableCell className="font-medium py-3 text-left">{getItemDescription(item.productId)}</TableCell>
                 <TableCell className="text-center py-3">{item.quantity}</TableCell>
                 <TableCell className="text-center py-3">{getUnitName(item.productId)}</TableCell>
                 <TableCell className="text-right py-3">{formatCurrency(item.price, invoice.currency)}</TableCell>
