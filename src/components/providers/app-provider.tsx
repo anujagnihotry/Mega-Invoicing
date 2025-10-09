@@ -155,83 +155,211 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const total = subtotal + (newInvoice.taxAmount || 0);
 
       const getProductName = (id: string) => products.find(p => p.id === id)?.name || 'N/A';
+      const getUnitName = (productId: string) => {
+          const product = products.find(p => p.id === productId);
+          if (!product) return '';
+          const unit = units.find(u => u.id === product.unitId);
+          return unit ? unit.name : '';
+      };
+
 
       const emailHtml = `
-        <div style="font-family: sans-serif; line-height: 1.6;">
-            <h2>Invoice from ${settings.companyProfile.name}</h2>
-            <p>Dear ${newInvoice.clientName},</p>
-            <p>Please find your invoice #${newInvoice.invoiceNumber} attached.</p>
-            <p><b>Due Date:</b> ${new Date(newInvoice.dueDate).toLocaleDateString()}</p>
-            <hr />
-            <h3>Summary</h3>
-            <table style="width: 100%; border-collapse: collapse;">
-                <thead>
-                    <tr>
-                        <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ddd;">Item</th>
-                        <th style="text-align: right; padding: 8px; border-bottom: 1px solid #ddd;">Quantity</th>
-                        <th style="text-align: right; padding: 8px; border-bottom: 1px solid #ddd;">Price</th>
-                        <th style="text-align: right; padding: 8px; border-bottom: 1px solid #ddd;">Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${newInvoice.items.map(item => `
+        <div style="font-family: -apple-system, 'system-ui', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; max-width: 600px; margin: 40px auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="padding-bottom: 20px;">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td>
+                      ${settings.appLogo ? `<img src="${settings.appLogo}" alt="${settings.appName}" style="height: 32px; width: auto;">` : ''}
+                      <h1 style="font-size: 24px; font-weight: bold; margin: 10px 0 0 0;">${settings.companyProfile.name}</h1>
+                      <p style="color: #666; font-size: 14px; margin: 5px 0;">${settings.companyProfile.address.replace(/\n/g, '<br>')}</p>
+                      <p style="color: #666; font-size: 14px; margin: 5px 0;">${settings.companyProfile.phone}</p>
+                    </td>
+                    <td style="text-align: right; vertical-align: top;">
+                      <h2 style="font-size: 36px; font-weight: bold; color: #888; margin: 0;">INVOICE</h2>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding-bottom: 40px;">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td width="50%">
+                      <p style="font-size: 14px; font-weight: bold; color: #333; margin: 0 0 5px 0;">Bill To</p>
+                      <p style="font-size: 16px; font-weight: bold; margin: 0 0 5px 0;">${newInvoice.clientName}</p>
+                      <p style="font-size: 14px; color: #666; margin: 0;">${newInvoice.clientEmail}</p>
+                      ${newInvoice.clientContact ? `<p style="font-size: 14px; color: #666; margin: 5px 0 0 0;">${newInvoice.clientContact}</p>` : ''}
+                    </td>
+                    <td width="50%" style="text-align: right;">
+                      <table align="right" cellpadding="0" cellspacing="0">
                         <tr>
-                            <td style="padding: 8px;">${getProductName(item.productId)}</td>
-                            <td style="text-align: right; padding: 8px;">${item.quantity}</td>
-                            <td style="text-align: right; padding: 8px;">${formatCurrency(item.price, newInvoice!.currency)}</td>
-                            <td style="text-align: right; padding: 8px;">${formatCurrency(item.quantity * item.price, newInvoice!.currency)}</td>
+                          <td style="font-weight: bold; padding: 2px 10px 2px 0;">Invoice #</td>
+                          <td>${newInvoice.invoiceNumber}</td>
                         </tr>
+                        <tr>
+                          <td style="font-weight: bold; padding: 2px 10px 2px 0;">Invoice Date</td>
+                          <td>${new Date(newInvoice.invoiceDate).toLocaleDateString()}</td>
+                        </tr>
+                        <tr>
+                          <td style="font-weight: bold; padding: 2px 10px 2px 0;">Due Date</td>
+                          <td>${new Date(newInvoice.dueDate).toLocaleDateString()}</td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding-bottom: 40px;">
+                <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+                  <thead style="background-color: #f9f9f9;">
+                    <tr>
+                      <th style="padding: 10px; text-align: left; font-size: 12px; text-transform: uppercase;">Item</th>
+                      <th style="padding: 10px; text-align: center; font-size: 12px; text-transform: uppercase;">Quantity</th>
+                      <th style="padding: 10px; text-align: center; font-size: 12px; text-transform: uppercase;">Unit</th>
+                      <th style="padding: 10px; text-align: right; font-size: 12px; text-transform: uppercase;">Price</th>
+                      <th style="padding: 10px; text-align: right; font-size: 12px; text-transform: uppercase;">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${newInvoice.items.map(item => `
+                      <tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 10px; font-weight: bold;">${getProductName(item.productId)}</td>
+                        <td style="padding: 10px; text-align: center;">${item.quantity}</td>
+                        <td style="padding: 10px; text-align: center;">${getUnitName(item.productId)}</td>
+                        <td style="padding: 10px; text-align: right;">${formatCurrency(item.price, newInvoice!.currency)}</td>
+                        <td style="padding: 10px; text-align: right;">${formatCurrency(item.quantity * item.price, newInvoice!.currency)}</td>
+                      </tr>
                     `).join('')}
-                </tbody>
-            </table>
-            <hr />
-            <table style="width: 100%; margin-top: 20px;">
-                <tbody>
-                    <tr>
-                        <td style="text-align: right;">Subtotal:</td>
-                        <td style="text-align: right; width: 120px;">${formatCurrency(subtotal, newInvoice.currency)}</td>
-                    </tr>
-                    ${appliedTax ? `
-                    <tr>
-                        <td style="text-align: right;">${appliedTax.name} (${appliedTax.rate}%):</td>
-                        <td style="text-align: right;">${formatCurrency(newInvoice.taxAmount || 0, newInvoice.currency)}</td>
-                    </tr>
-                    ` : ''}
-                    <tr>
-                        <td style="text-align: right; font-weight: bold;">Total:</td>
-                        <td style="text-align: right; font-weight: bold;">${formatCurrency(total, newInvoice.currency)}</td>
-                    </tr>
-                </tbody>
-            </table>
-            <p>Thank you for your business!</p>
+                  </tbody>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding-bottom: 20px;">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td width="50%"></td>
+                    <td width="50%">
+                      <table align="right" width="250px" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td style="padding: 5px 0; color: #666;">Subtotal</td>
+                          <td style="padding: 5px 0; text-align: right;">${formatCurrency(subtotal, newInvoice.currency)}</td>
+                        </tr>
+                        ${appliedTax ? `
+                        <tr>
+                          <td style="padding: 5px 0; color: #666;">${appliedTax.name} (${appliedTax.rate}%)</td>
+                          <td style="padding: 5px 0; text-align: right;">${formatCurrency(newInvoice.taxAmount || 0, newInvoice.currency)}</td>
+                        </tr>
+                        ` : ''}
+                        <tr><td colspan="2" style="border-bottom: 2px solid #333; padding-top: 5px;"></td></tr>
+                        <tr>
+                          <td style="padding: 10px 0; font-weight: bold; font-size: 18px;">Total</td>
+                          <td style="padding: 10px 0; text-align: right; font-weight: bold; font-size: 18px;">${formatCurrency(total, newInvoice.currency)}</td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p style="font-weight: bold; font-size: 14px; margin: 20px 0 5px 0;">Notes</p>
+                <p style="font-size: 12px; color: #666; margin: 0;">Thank you for your business. Please pay within the due date.</p>
+              </td>
+            </tr>
+          </table>
         </div>
       `;
 
       // Create PDF
       const doc = new jsPDF();
-      doc.text(`Invoice #${newInvoice.invoiceNumber}`, 14, 22);
-      doc.text(`Client: ${newInvoice.clientName}`, 14, 30);
-      doc.text(`Date: ${new Date(newInvoice.invoiceDate).toLocaleDateString()}`, 14, 38);
-      doc.text(`Due: ${new Date(newInvoice.dueDate).toLocaleDateString()}`, 14, 46);
+      
+      // Header
+      if (settings.appLogo) {
+        try {
+          doc.addImage(settings.appLogo, 'PNG', 14, 15, 20, 20);
+        } catch(e) { console.error("Could not add logo to PDF:", e)}
+      }
+      doc.setFontSize(20);
+      doc.text(settings.companyProfile.name, 40, 22);
+      doc.setFontSize(10);
+      doc.text(settings.companyProfile.address, 40, 28);
+      doc.text(settings.companyProfile.phone, 40, 34);
+      doc.setFontSize(26);
+      doc.setFont('helvetica', 'bold');
+      doc.text('INVOICE', 196, 22, { align: 'right' });
+      
+      // Bill To & Invoice Details
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Bill To', 14, 50);
+      doc.setFont('helvetica', 'normal');
+      doc.text(newInvoice.clientName, 14, 56);
+      doc.text(newInvoice.clientEmail, 14, 62);
+      if(newInvoice.clientContact) doc.text(newInvoice.clientContact, 14, 68);
 
+      const detailsX = 196;
+      doc.text(`Invoice #: ${newInvoice.invoiceNumber}`, detailsX, 50, { align: 'right' });
+      doc.text(`Invoice Date: ${new Date(newInvoice.invoiceDate).toLocaleDateString()}`, detailsX, 56, { align: 'right' });
+      doc.text(`Due Date: ${new Date(newInvoice.dueDate).toLocaleDateString()}`, detailsX, 62, { align: 'right' });
+
+      // Table
       doc.autoTable({
-          startY: 60,
-          head: [['Item', 'Quantity', 'Price', 'Total']],
+          startY: 80,
+          head: [['Item', 'Quantity', 'Unit', 'Price', 'Amount']],
           body: newInvoice.items.map(item => [
               getProductName(item.productId),
               item.quantity,
+              getUnitName(item.productId),
               formatCurrency(item.price, newInvoice!.currency),
               formatCurrency(item.quantity * item.price, newInvoice!.currency),
           ]),
-          foot: [
-              ['', '', 'Subtotal', formatCurrency(subtotal, newInvoice.currency)],
-              ...(appliedTax ? [['', '', `${appliedTax.name} (${appliedTax.rate}%)`, formatCurrency(newInvoice.taxAmount || 0, newInvoice.currency)]] : []),
-              ['', '', 'Total', formatCurrency(total, newInvoice.currency)],
-          ],
-          footStyles: { fontStyle: 'bold' }
+          headStyles: { fillColor: [248, 249, 250], textColor: 50 },
+          styles: { halign: 'left' },
+          columnStyles: {
+              1: { halign: 'center' },
+              2: { halign: 'center' },
+              3: { halign: 'right' },
+              4: { halign: 'right' },
+          }
       });
-      const pdfBase64 = doc.output('datauristring').split(',')[1];
+      
+      const finalY = (doc as any).lastAutoTable.finalY;
 
+      // Summary
+      doc.setFontSize(11);
+      doc.text('Subtotal', 140, finalY + 10);
+      doc.text(formatCurrency(subtotal, newInvoice.currency), 196, finalY + 10, { align: 'right' });
+      
+      let summaryY = finalY + 16;
+      if (appliedTax) {
+          doc.text(`${appliedTax.name} (${appliedTax.rate}%)`, 140, summaryY);
+          doc.text(formatCurrency(newInvoice.taxAmount || 0, newInvoice.currency), 196, summaryY, { align: 'right' });
+          summaryY += 6;
+      }
+      doc.setDrawColor(180);
+      doc.line(140, summaryY, 196, summaryY);
+      summaryY += 8;
+
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Total', 140, summaryY);
+      doc.text(formatCurrency(total, newInvoice.currency), 196, summaryY, { align: 'right' });
+
+      // Footer Notes
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Notes', 14, summaryY + 20);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Thank you for your business. Please pay within the due date.', 14, summaryY + 25);
+
+      const pdfBase64 = doc.output('datauristring').split(',')[1];
       
       sendEmail({
           to: newInvoice.clientEmail,
@@ -268,7 +396,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       })
     }
 
-  }, [setInvoices, setProducts, settings, toast, products]);
+  }, [setInvoices, setProducts, settings, toast, products, units]);
 
 
   const updateInvoice = useCallback((updatedInvoiceData: Omit<Invoice, 'currency' | 'taxAmount'>) => {
