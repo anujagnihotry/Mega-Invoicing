@@ -8,6 +8,7 @@ import { Menu, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { useApp } from '@/hooks/use-app';
 import Image from 'next/image';
+import { LowStockNotification } from '@/components/low-stock-notification';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { settings } = useApp();
@@ -58,6 +59,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </header>
         <main className="flex-1 p-4 sm:p-6 space-y-4">
+          <LowStockNotification />
           {children}
         </main>
       </div>
