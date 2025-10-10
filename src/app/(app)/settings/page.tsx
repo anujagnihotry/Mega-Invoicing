@@ -558,7 +558,7 @@ export default function SettingsPage() {
                                     <FormLabel>Tax Name</FormLabel>
                                     <FormControl><Input placeholder="e.g. GST, VAT" {...field} /></FormControl>
                                     <FormMessage />
-                                </Item>
+                                </FormItem>
                             )}
                         />
                         <FormField
@@ -569,7 +569,7 @@ export default function SettingsPage() {
                                     <FormLabel>Rate (%)</FormLabel>
                                     <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
                                     <FormMessage />
-                                </Item>
+                                </FormItem>
                             )}
                         />
                         <Button type="submit">Save Changes</Button>
@@ -579,3 +579,4 @@ export default function SettingsPage() {
         </Dialog>
     </div>
   );
+}
