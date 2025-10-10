@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { Invoice, AppSettings, Product, Unit } from '@/lib/types';
@@ -41,9 +42,9 @@ export function InvoiceDisplay({ invoice, settings, products, units }: InvoiceDi
           <div className="flex items-center gap-4">
             {settings.appLogo && <Image src={settings.appLogo} alt={settings.appName} width={64} height={64} className="h-16 w-16" />}
             <div>
-                <h1 className="text-3xl font-bold">{settings.companyProfile.name}</h1>
-                <p className="text-muted-foreground">{settings.companyProfile.address.replace(/\n/g, ', ')}</p>
-                <p className="text-muted-foreground">{settings.companyProfile.phone}</p>
+                <h1 className="text-xl font-bold">{settings.companyProfile.name}</h1>
+                <p className="text-muted-foreground text-sm">{settings.companyProfile.address.replace(/\n/g, ', ')}</p>
+                <p className="text-muted-foreground text-sm">{settings.companyProfile.phone}</p>
             </div>
           </div>
           <h2 className="text-4xl font-bold text-muted-foreground tracking-widest uppercase">Invoice</h2>
@@ -52,31 +53,33 @@ export function InvoiceDisplay({ invoice, settings, products, units }: InvoiceDi
       <CardContent className="p-0 mt-10">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <h3 className="font-semibold mb-2">Bill To</h3>
+            <p className="text-muted-foreground text-sm">Bill To</p>
             <p className="font-bold text-lg">{invoice.clientName}</p>
             <p className="text-muted-foreground">{invoice.clientEmail}</p>
             {invoice.clientContact && <p className="text-muted-foreground">{invoice.clientContact}</p>}
           </div>
-          <div className="text-right">
-            <div className="grid grid-cols-2">
-              <span className="font-semibold">Invoice #</span>
-              <span>{invoice.invoiceNumber}</span>
+          <div className="flex flex-col items-end">
+            <div className="w-64">
+                <div className="flex justify-between">
+                    <span className="font-semibold text-muted-foreground">Invoice #</span>
+                    <span>{invoice.invoiceNumber}</span>
+                </div>
+                <div className="flex justify-between">
+                    <span className="font-semibold text-muted-foreground">Invoice Date</span>
+                    <span>{new Date(invoice.invoiceDate).toLocaleDateString()}</span>
+                </div>
+                <div className="flex justify-between">
+                    <span className="font-semibold text-muted-foreground">Due Date</span>
+                    <span>{new Date(invoice.dueDate).toLocaleDateString()}</span>
+                </div>
             </div>
-            <div className="grid grid-cols-2">
-              <span className="font-semibold">Invoice Date</span>
-              <span>{new Date(invoice.invoiceDate).toLocaleDateString()}</span>
-            </div>
-            <div className="grid grid-cols-2">
-              <span className="font-semibold">Due Date</span>
-              <span>{new Date(invoice.dueDate).toLocaleDateString()}</span>
-            </div>
-             <div className="flex justify-end mt-2">
+             <div className="mt-2">
               <Badge className={cn(
-                  "text-base",
-                  {'bg-yellow-500 text-white': invoice.status === 'Draft'},
-                  {'bg-blue-500 text-white': invoice.status === 'Sent'},
-                  {'bg-green-600 text-white': invoice.status === 'Paid'},
-                  {'bg-red-600 text-white': invoice.status === 'Cancelled'}
+                  "text-base px-3 py-1",
+                  {'bg-yellow-100 text-yellow-800 border-yellow-200': invoice.status === 'Draft'},
+                  {'bg-blue-100 text-blue-800 border-blue-200': invoice.status === 'Sent'},
+                  {'bg-green-100 text-green-800 border-green-200': invoice.status === 'Paid'},
+                  {'bg-red-100 text-red-800 border-red-200': invoice.status === 'Cancelled'}
               )}>{invoice.status}</Badge>
             </div>
           </div>
@@ -128,7 +131,7 @@ export function InvoiceDisplay({ invoice, settings, products, units }: InvoiceDi
         </div>
 
         <div className="mt-16">
-          <h3 className="font-semibold">Notes</h3>
+          <h3 className="font-semibold text-sm">Notes</h3>
           <p className="text-muted-foreground text-sm">{invoice.notes || 'Thank you for your business. Please pay within the due date.'}</p>
         </div>
       </CardContent>

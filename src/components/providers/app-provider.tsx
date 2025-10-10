@@ -164,117 +164,135 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
 
       const emailHtml = `
-        <div style="font-family: -apple-system, 'system-ui', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; max-width: 600px; margin: 40px auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;">
-          <table width="100%" cellpadding="0" cellspacing="0">
-            <tr>
-              <td style="padding-bottom: 20px;">
-                <table width="100%" cellpadding="0" cellspacing="0">
-                  <tr>
-                    <td>
-                      ${settings.appLogo ? `<img src="${settings.appLogo}" alt="${settings.appName}" style="height: 32px; width: auto;">` : ''}
-                      <h1 style="font-size: 24px; font-weight: bold; margin: 10px 0 0 0;">${settings.companyProfile.name}</h1>
-                      <p style="color: #666; font-size: 14px; margin: 5px 0;">${settings.companyProfile.address.replace(/\n/g, '<br>')}</p>
-                      <p style="color: #666; font-size: 14px; margin: 5px 0;">${settings.companyProfile.phone}</p>
-                    </td>
-                    <td style="text-align: right; vertical-align: top;">
-                      <h2 style="font-size: 36px; font-weight: bold; color: #888; margin: 0;">INVOICE</h2>
-                    </td>
-                  </tr>
-                </table>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding-bottom: 40px;">
-                <table width="100%" cellpadding="0" cellspacing="0">
-                  <tr>
-                    <td width="50%">
-                      <p style="font-size: 14px; font-weight: bold; color: #333; margin: 0 0 5px 0;">Bill To</p>
-                      <p style="font-size: 16px; font-weight: bold; margin: 0 0 5px 0;">${newInvoice.clientName}</p>
-                      <p style="font-size: 14px; color: #666; margin: 0;">${newInvoice.clientEmail}</p>
-                      ${newInvoice.clientContact ? `<p style="font-size: 14px; color: #666; margin: 5px 0 0 0;">${newInvoice.clientContact}</p>` : ''}
-                    </td>
-                    <td width="50%" style="text-align: right;">
-                      <table align="right" cellpadding="0" cellspacing="0">
-                        <tr>
-                          <td style="font-weight: bold; padding: 2px 10px 2px 0;">Invoice #</td>
-                          <td>${newInvoice.invoiceNumber}</td>
-                        </tr>
-                        <tr>
-                          <td style="font-weight: bold; padding: 2px 10px 2px 0;">Invoice Date</td>
-                          <td>${new Date(newInvoice.invoiceDate).toLocaleDateString()}</td>
-                        </tr>
-                        <tr>
-                          <td style="font-weight: bold; padding: 2px 10px 2px 0;">Due Date</td>
-                          <td>${new Date(newInvoice.dueDate).toLocaleDateString()}</td>
-                        </tr>
+      <div style="font-family: -apple-system, 'system-ui', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; max-width: 600px; margin: 40px auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="border-spacing: 0;">
+              <!-- Header -->
+              <tr>
+                  <td style="padding-bottom: 20px;">
+                      <table width="100%" cellpadding="0" cellspacing="0" style="border-spacing: 0;">
+                          <tr>
+                              <td style="vertical-align: top;">
+                                  <table cellpadding="0" cellspacing="0" style="border-spacing: 0;">
+                                      <tr>
+                                          ${settings.appLogo ? `<td style="padding-right: 16px;"><img src="${settings.appLogo}" alt="${settings.appName}" style="height: 64px; width: 64px;"></td>` : ''}
+                                          <td style="vertical-align: top;">
+                                              <div style="font-size: 20px; font-weight: bold; margin-bottom: 4px;">${settings.companyProfile.name}</div>
+                                              <div style="color: #666; font-size: 14px;">${settings.companyProfile.address.replace(/\n/g, '<br>')}</div>
+                                              <div style="color: #666; font-size: 14px;">${settings.companyProfile.phone}</div>
+                                          </td>
+                                      </tr>
+                                  </table>
+                              </td>
+                              <td style="text-align: right; vertical-align: top; font-size: 36px; font-weight: bold; color: #888; text-transform: uppercase; letter-spacing: 0.1em;">
+                                  INVOICE
+                              </td>
+                          </tr>
                       </table>
-                    </td>
-                  </tr>
-                </table>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding-bottom: 40px;">
-                <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
-                  <thead style="background-color: #f9f9f9;">
-                    <tr>
-                      <th style="padding: 10px; text-align: left; font-size: 12px; text-transform: uppercase;">Item</th>
-                      <th style="padding: 10px; text-align: center; font-size: 12px; text-transform: uppercase;">Quantity</th>
-                      <th style="padding: 10px; text-align: center; font-size: 12px; text-transform: uppercase;">Unit</th>
-                      <th style="padding: 10px; text-align: right; font-size: 12px; text-transform: uppercase;">Price</th>
-                      <th style="padding: 10px; text-align: right; font-size: 12px; text-transform: uppercase;">Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${newInvoice.items.map(item => `
-                      <tr style="border-bottom: 1px solid #eee;">
-                        <td style="padding: 10px; font-weight: bold;">${getProductName(item.productId)}</td>
-                        <td style="padding: 10px; text-align: center;">${item.quantity}</td>
-                        <td style="padding: 10px; text-align: center;">${getUnitName(item.productId)}</td>
-                        <td style="padding: 10px; text-align: right;">${formatCurrency(item.price, newInvoice!.currency)}</td>
-                        <td style="padding: 10px; text-align: right;">${formatCurrency(item.quantity * item.price, newInvoice!.currency)}</td>
-                      </tr>
-                    `).join('')}
-                  </tbody>
-                </table>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding-bottom: 20px;">
-                <table width="100%" cellpadding="0" cellspacing="0">
-                  <tr>
-                    <td width="50%"></td>
-                    <td width="50%">
-                      <table align="right" width="250px" cellpadding="0" cellspacing="0">
-                        <tr>
-                          <td style="padding: 5px 0; color: #666;">Subtotal</td>
-                          <td style="padding: 5px 0; text-align: right;">${formatCurrency(subtotal, newInvoice.currency)}</td>
-                        </tr>
-                        ${appliedTax ? `
-                        <tr>
-                          <td style="padding: 5px 0; color: #666;">${appliedTax.name} (${appliedTax.rate}%)</td>
-                          <td style="padding: 5px 0; text-align: right;">${formatCurrency(newInvoice.taxAmount || 0, newInvoice.currency)}</td>
-                        </tr>
-                        ` : ''}
-                        <tr><td colspan="2" style="border-bottom: 2px solid #333; padding-top: 5px;"></td></tr>
-                        <tr>
-                          <td style="padding: 10px 0; font-weight: bold; font-size: 18px;">Total</td>
-                          <td style="padding: 10px 0; text-align: right; font-weight: bold; font-size: 18px;">${formatCurrency(total, newInvoice.currency)}</td>
-                        </tr>
+                  </td>
+              </tr>
+      
+              <!-- Billing Info -->
+              <tr>
+                  <td style="padding-top: 20px; padding-bottom: 30px;">
+                      <table width="100%" cellpadding="0" cellspacing="0" style="border-spacing: 0;">
+                          <tr>
+                              <td width="50%" style="vertical-align: top;">
+                                  <div style="font-size: 12px; color: #666;">Bill To</div>
+                                  <div style="font-size: 18px; font-weight: bold; margin: 4px 0;">${newInvoice.clientName}</div>
+                                  <div style="font-size: 14px; color: #666;">${newInvoice.clientEmail}</div>
+                                  ${newInvoice.clientContact ? `<div style="font-size: 14px; color: #666;">${newInvoice.clientContact}</div>` : ''}
+                              </td>
+                              <td width="50%" style="vertical-align: top; text-align: right;">
+                                  <table align="right" cellpadding="0" cellspacing="0" style="border-spacing: 0 4px; font-size: 14px;">
+                                      <tr>
+                                          <td style="text-align: left; padding-right: 20px; font-weight: bold; color: #666;">Invoice #</td>
+                                          <td style="text-align: right;">${newInvoice.invoiceNumber}</td>
+                                      </tr>
+                                      <tr>
+                                          <td style="text-align: left; padding-right: 20px; font-weight: bold; color: #666;">Invoice Date</td>
+                                          <td style="text-align: right;">${new Date(newInvoice.invoiceDate).toLocaleDateString()}</td>
+                                      </tr>
+                                      <tr>
+                                          <td style="text-align: left; padding-right: 20px; font-weight: bold; color: #666;">Due Date</td>
+                                          <td style="text-align: right;">${new Date(newInvoice.dueDate).toLocaleDateString()}</td>
+                                      </tr>
+                                  </table>
+                              </td>
+                          </tr>
                       </table>
-                    </td>
-                  </tr>
-                </table>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <p style="font-weight: bold; font-size: 14px; margin: 20px 0 5px 0;">Notes</p>
-                <p style="font-size: 12px; color: #666; margin: 0;">${newInvoice.notes || 'Thank you for your business. Please pay within the due date.'}</p>
-              </td>
-            </tr>
+                  </td>
+              </tr>
+      
+              <!-- Separator -->
+              <tr><td style="border-bottom: 1px solid #eee; padding-top: 10px; margin-bottom: 30px;"></td></tr>
+      
+              <!-- Items Table -->
+              <tr>
+                  <td style="padding-top: 30px; padding-bottom: 20px;">
+                      <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+                          <thead>
+                              <tr>
+                                  <th style="padding: 10px 0; text-align: left; font-size: 12px; text-transform: uppercase; color: #666; border-bottom: 1px solid #eee;">Item</th>
+                                  <th style="padding: 10px 0; text-align: center; font-size: 12px; text-transform: uppercase; color: #666; border-bottom: 1px solid #eee;">Quantity</th>
+                                  <th style="padding: 10px 0; text-align: center; font-size: 12px; text-transform: uppercase; color: #666; border-bottom: 1px solid #eee;">Unit</th>
+                                  <th style="padding: 10px 0; text-align: right; font-size: 12px; text-transform: uppercase; color: #666; border-bottom: 1px solid #eee;">Price</th>
+                                  <th style="padding: 10px 0; text-align: right; font-size: 12px; text-transform: uppercase; color: #666; border-bottom: 1px solid #eee;">Amount</th>
+                              </tr>
+                          </thead>
+                          <tbody>
+                              ${newInvoice.items.map(item => `
+                                  <tr style="border-bottom: 1px solid #eee;">
+                                      <td style="padding: 12px 0; text-align: left; font-weight: bold;">${getProductName(item.productId)}</td>
+                                      <td style="padding: 12px 0; text-align: center;">${item.quantity}</td>
+                                      <td style="padding: 12px 0; text-align: center;">${getUnitName(item.productId)}</td>
+                                      <td style="padding: 12px 0; text-align: right;">${formatCurrency(item.price, newInvoice!.currency)}</td>
+                                      <td style="padding: 12px 0; text-align: right; font-weight: bold;">${formatCurrency(item.quantity * item.price, newInvoice!.currency)}</td>
+                                  </tr>
+                              `).join('')}
+                          </tbody>
+                      </table>
+                  </td>
+              </tr>
+      
+              <!-- Summary -->
+              <tr>
+                  <td style="padding-top: 20px;">
+                      <table width="100%" cellpadding="0" cellspacing="0" style="border-spacing: 0;">
+                          <tr>
+                              <td width="50%"></td>
+                              <td width="50%">
+                                  <table width="100%" align="right" cellpadding="0" cellspacing="0" style="border-spacing: 0 4px; font-size: 14px;">
+                                      <tr>
+                                          <td style="color: #666;">Subtotal</td>
+                                          <td style="text-align: right;">${formatCurrency(subtotal, newInvoice.currency)}</td>
+                                      </tr>
+                                      ${appliedTax ? `
+                                      <tr>
+                                          <td style="color: #666;">${appliedTax.name} (${appliedTax.rate}%)</td>
+                                          <td style="text-align: right;">${formatCurrency(newInvoice.taxAmount || 0, newInvoice.currency)}</td>
+                                      </tr>
+                                      ` : ''}
+                                      <tr><td colspan="2" style="border-bottom: 1px solid #eee; padding-top: 8px;"></td></tr>
+                                      <tr>
+                                          <td style="padding-top: 8px; font-weight: bold; font-size: 20px;">Total</td>
+                                          <td style="padding-top: 8px; text-align: right; font-weight: bold; font-size: 20px;">${formatCurrency(total, newInvoice.currency)}</td>
+                                      </tr>
+                                  </table>
+                              </td>
+                          </tr>
+                      </table>
+                  </td>
+              </tr>
+      
+              <!-- Notes -->
+              <tr>
+                  <td style="padding-top: 40px;">
+                      <p style="font-weight: bold; font-size: 12px; margin: 0 0 4px 0;">Notes</p>
+                      <p style="font-size: 12px; color: #666; margin: 0;">${newInvoice.notes || 'Thank you for your business. Please pay within the due date.'}</p>
+                  </td>
+              </tr>
           </table>
-        </div>
+      </div>
       `;
 
       // Create PDF
@@ -287,8 +305,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         } catch(e) { console.error("Could not add logo to PDF:", e)}
       }
       doc.setFontSize(20);
+      doc.setFont('helvetica', 'bold');
       doc.text(settings.companyProfile.name, 40, 22);
       doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
       doc.text(settings.companyProfile.address, 40, 28);
       doc.text(settings.companyProfile.phone, 40, 34);
       doc.setFontSize(26);
@@ -296,18 +316,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       doc.text('INVOICE', 196, 22, { align: 'right' });
       
       // Bill To & Invoice Details
-      doc.setFontSize(11);
-      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(100);
       doc.text('Bill To', 14, 50);
-      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(11);
+      doc.setTextColor(0);
+      doc.setFont('helvetica', 'bold');
       doc.text(newInvoice.clientName, 14, 56);
+      doc.setFont('helvetica', 'normal');
       doc.text(newInvoice.clientEmail, 14, 62);
       if(newInvoice.clientContact) doc.text(newInvoice.clientContact, 14, 68);
 
-      const detailsX = 196;
-      doc.text(`Invoice #: ${newInvoice.invoiceNumber}`, detailsX, 50, { align: 'right' });
-      doc.text(`Invoice Date: ${new Date(newInvoice.invoiceDate).toLocaleDateString()}`, detailsX, 56, { align: 'right' });
-      doc.text(`Due Date: ${new Date(newInvoice.dueDate).toLocaleDateString()}`, detailsX, 62, { align: 'right' });
+      const detailsX = 150;
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(100);
+      doc.text('Invoice #', detailsX, 50);
+      doc.text('Invoice Date', detailsX, 56);
+      doc.text('Due Date', detailsX, 62);
+      
+      doc.setTextColor(0);
+      doc.setFont('helvetica', 'normal');
+      doc.text(newInvoice.invoiceNumber, 196, 50, { align: 'right' });
+      doc.text(new Date(newInvoice.invoiceDate).toLocaleDateString(), 196, 56, { align: 'right' });
+      doc.text(new Date(newInvoice.dueDate).toLocaleDateString(), 196, 62, { align: 'right' });
 
       // Table
       doc.autoTable({
@@ -320,44 +352,59 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               formatCurrency(item.price, newInvoice!.currency),
               formatCurrency(item.quantity * item.price, newInvoice!.currency),
           ]),
-          headStyles: { fillColor: [248, 249, 250], textColor: 50, fontStyle: 'normal' },
+          headStyles: { fillColor: [248, 249, 250], textColor: 50, fontStyle: 'bold', halign: 'left' },
           styles: { halign: 'left' },
           columnStyles: {
+              0: { halign: 'left', fontStyle: 'bold' },
               1: { halign: 'center' },
               2: { halign: 'center' },
               3: { halign: 'right' },
-              4: { halign: 'right' },
+              4: { halign: 'right', fontStyle: 'bold' },
           }
       });
       
       const finalY = (doc as any).lastAutoTable.finalY;
 
       // Summary
+      const summaryX = 140;
       doc.setFontSize(11);
-      doc.text('Subtotal', 140, finalY + 10);
-      doc.text(formatCurrency(subtotal, newInvoice.currency), 196, finalY + 10, { align: 'right' });
+      doc.setTextColor(100);
+      doc.text('Subtotal', summaryX, finalY + 10);
       
       let summaryY = finalY + 16;
       if (appliedTax) {
-          doc.text(`${appliedTax.name} (${appliedTax.rate}%)`, 140, summaryY);
-          doc.text(formatCurrency(newInvoice.taxAmount || 0, newInvoice.currency), 196, summaryY, { align: 'right' });
+          doc.text(`${appliedTax.name} (${appliedTax.rate}%)`, summaryX, summaryY);
           summaryY += 6;
       }
-      doc.setDrawColor(180);
-      doc.line(140, summaryY, 196, summaryY);
-      summaryY += 8;
+      summaryY += 2; // Separator space
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(0);
+      doc.text('Total', summaryX, summaryY + 6);
+      
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(11);
+      doc.text(formatCurrency(subtotal, newInvoice.currency), 196, finalY + 10, { align: 'right' });
+      if (appliedTax) {
+        doc.text(formatCurrency(newInvoice.taxAmount || 0, newInvoice.currency), 196, finalY + 16, { align: 'right' });
+      }
+
+      doc.setDrawColor(238, 238, 238); // #eeeeee
+      doc.line(summaryX, finalY + 16 + 5, 196, finalY + 16 + 5);
 
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
-      doc.text('Total', 140, summaryY);
-      doc.text(formatCurrency(total, newInvoice.currency), 196, summaryY, { align: 'right' });
+      doc.text(formatCurrency(total, newInvoice.currency), 196, summaryY + 6, { align: 'right' });
+
 
       // Footer Notes
+      const notesStartY = summaryY + 30;
       doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
-      doc.text('Notes', 14, summaryY + 20);
+      doc.text('Notes', 14, notesStartY);
       doc.setFont('helvetica', 'normal');
-      doc.text(newInvoice.notes || 'Thank you for your business. Please pay within the due date.', 14, summaryY + 25);
+      doc.setTextColor(100);
+      doc.text(newInvoice.notes || 'Thank you for your business. Please pay within the due date.', 14, notesStartY + 5);
 
       const pdfBase64 = doc.output('datauristring').split(',')[1];
       
