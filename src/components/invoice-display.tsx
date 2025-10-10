@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import type { Invoice, AppSettings, Product, Unit } from '@/lib/types';
@@ -8,6 +9,8 @@ import { Separator } from '@/components/ui/separator';
 import { formatCurrency, cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
+import Link from 'next/link';
+import { Button } from './ui/button';
 
 interface InvoiceDisplayProps {
   invoice: Invoice;
@@ -129,6 +132,16 @@ export function InvoiceDisplay({ invoice, settings, products, units }: InvoiceDi
             </div>
           </div>
         </div>
+
+        {invoice.paymentLink && (
+            <div className="mt-8 text-center no-print">
+                <Button asChild size="lg">
+                    <Link href={invoice.paymentLink} target="_blank">
+                        Pay Now
+                    </Link>
+                </Button>
+            </div>
+        )}
 
         <div className="mt-16">
           <h3 className="font-semibold text-sm">Notes</h3>

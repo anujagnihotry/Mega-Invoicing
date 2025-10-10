@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useParams } from 'next/navigation';
@@ -5,7 +6,7 @@ import { useApp } from '@/hooks/use-app';
 import { useEffect, useState } from 'react';
 import type { Invoice } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Printer } from 'lucide-react';
+import { Printer, CreditCard } from 'lucide-react';
 import Link from 'next/link';
 import { InvoiceDisplay } from '@/components/invoice-display';
 
@@ -34,7 +35,15 @@ export default function ViewInvoicePage() {
     <div className="print-container">
       <div className="flex items-center mb-4 no-print">
          <h1 className="font-semibold text-lg md:text-2xl">Invoice {invoice.invoiceNumber}</h1>
-         <div className="ml-auto">
+         <div className="ml-auto flex items-center gap-2">
+            {invoice.paymentLink && (
+                <Button asChild variant="secondary">
+                    <Link href={invoice.paymentLink} target="_blank">
+                        <CreditCard className="mr-2 h-4 w-4" />
+                        Pay Online
+                    </Link>
+                </Button>
+            )}
             <Button asChild>
                 <Link href={`/invoices/${invoice.id}/print`} target="_blank">
                     <Printer className="mr-2 h-4 w-4" />

@@ -42,6 +42,10 @@ const defaultSettings: AppSettings = {
   },
   email: {
     sendOnNewInvoice: false,
+  },
+  paymentGateway: {
+    enabled: false,
+    paymentLinkBaseUrl: '',
   }
 };
 
@@ -111,6 +115,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!tax) return 0;
     return (subtotal * tax.rate) / 100;
   }
+  
+  const generatePaymentLink = (invoice: Invoice, total: number) => {
+    if (!settings.paymentGateway.enabled || !settings.paymentGateway.paymentLinkBaseUrl) {
+      return undefined;
+    }
+    const url = new URL(settings.paymentGateway.paymentLinkBaseUrl);
+    url.searchParams.append('invoice_id', invoice.invoiceNumber);
+    url.searchParams.append('amount', total.toFixed(2));
+    url.searchParams.append('currency', invoice.currency);
+    url.searchParams.append('description', `Payment for Invoice #${invoice.invoiceNumber}`);
+    return url.toString();
+  };
 
   const addInvoice = useCallback((invoiceData: Omit<Invoice, 'id' | 'currency' | 'taxAmount'>) => {
     let newInvoice: Invoice | null = null;
@@ -118,14 +134,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const newProducts = [...prevProducts];
       const invoiceId = generateId();
       const subtotal = invoiceData.items.reduce((acc, item) => acc + item.quantity * item.price, 0);
+      const taxAmount = calculateTaxAmount(subtotal, invoiceData.taxId);
+      const total = subtotal + taxAmount;
 
       newInvoice = {
         ...invoiceData,
         id: invoiceId,
         currency: settings.currency,
         items: invoiceData.items.map(item => ({ ...item, id: generateId() })),
-        taxAmount: calculateTaxAmount(subtotal, invoiceData.taxId),
+        taxAmount: taxAmount,
       };
+      
+      newInvoice.paymentLink = generatePaymentLink(newInvoice, total);
 
       for (const item of newInvoice.items) {
         const productIndex = newProducts.findIndex(p => p.id === item.productId);
@@ -165,76 +185,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       const emailHtml = `
       <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: auto; border: 1px solid #ddd; padding: 20px;">
-        <table style="width: 100%; border-collapse: collapse;">
-          <tr>
-            <td style="padding-bottom: 20px; vertical-align: top;">
-              <h1 style="font-size: 24px; margin: 0; font-weight: bold;">${settings.companyProfile.name}</h1>
-              <p style="margin: 0; font-size: 14px; color: #555;">${settings.companyProfile.address.replace(/\n/g, '<br>')}</p>
-              <p style="margin: 0; font-size: 14px; color: #555;">${settings.companyProfile.phone}</p>
-            </td>
-            <td style="text-align: right; vertical-align: top;">
-              <h2 style="font-size: 40px; margin: 0; color: #888; text-transform: uppercase;">Invoice</h2>
-            </td>
-          </tr>
-          <tr>
-            <td colspan="2" style="padding-top: 30px; padding-bottom: 30px;">
-              <table style="width: 100%; border-collapse: collapse;">
-                <tr>
-                  <td style="width: 50%; vertical-align: top;">
-                    <p style="margin: 0; font-size: 14px; color: #555;">Bill To</p>
-                    <p style="margin: 5px 0 0; font-size: 18px; font-weight: bold;">${newInvoice.clientName}</p>
-                    <p style="margin: 5px 0 0; color: #555;">${newInvoice.clientEmail}</p>
-                  </td>
-                  <td style="width: 50%; text-align: right; vertical-align: top;">
-                    <table style="width: 250px; margin-left: auto; text-align: right;">
-                      <tr><td style="font-weight: bold; color: #555;">Invoice #</td><td>${newInvoice.invoiceNumber}</td></tr>
-                      <tr><td style="font-weight: bold; color: #555;">Invoice Date</td><td>${new Date(newInvoice.invoiceDate).toLocaleDateString()}</td></tr>
-                      <tr><td style="font-weight: bold; color: #555;">Due Date</td><td>${new Date(newInvoice.dueDate).toLocaleDateString()}</td></tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-          <tr>
-            <td colspan="2">
-              <table style="width: 100%; border-collapse: collapse; text-align: left;">
-                <thead style="background-color: #f8f9fa;">
-                  <tr>
-                    <th style="padding: 10px; text-transform: uppercase; font-size: 12px; color: #555; text-align: left;">Item</th>
-                    <th style="padding: 10px; text-transform: uppercase; font-size: 12px; color: #555; text-align: center;">Quantity</th>
-                    <th style="padding: 10px; text-transform: uppercase; font-size: 12px; color: #555; text-align: center;">Unit</th>
-                    <th style="padding: 10px; text-transform: uppercase; font-size: 12px; color: #555; text-align: right;">Price</th>
-                    <th style="padding: 10px; text-transform: uppercase; font-size: 12px; color: #555; text-align: right;">Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${newInvoice.items.map(item => `
-                    <tr style="border-bottom: 1px solid #eee;">
-                      <td style="padding: 10px; font-weight: 500;">${getProductName(item.productId)}</td>
-                      <td style="padding: 10px; text-align: center;">${item.quantity}</td>
-                      <td style="padding: 10px; text-align: center;">${getUnitName(item.productId)}</td>
-                      <td style="padding: 10px; text-align: right;">${formatCurrency(item.price, newInvoice!.currency)}</td>
-                      <td style="padding: 10px; text-align: right; font-weight: 500;">${formatCurrency(item.price * item.quantity, newInvoice!.currency)}</td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            </td>
-          </tr>
-          <tr><td colspan="2" style="padding-top: 20px; text-align: right;">
-              <table style="width: 300px; margin-left: auto; text-align: right;">
-                <tr><td style="color: #555;">Subtotal</td><td>${formatCurrency(subtotal, newInvoice!.currency)}</td></tr>
-                ${appliedTax ? `<tr><td style="color: #555;">${appliedTax.name} (${appliedTax.rate}%)</td><td>${formatCurrency(newInvoice!.taxAmount || 0, newInvoice!.currency)}</td></tr>` : ''}
-                <tr><td colspan="2" style="border-top: 1px solid #eee; padding-top: 10px; margin-top:10px;"></td></tr>
-                <tr style="font-weight: bold; font-size: 20px;"><td>Total</td><td>${formatCurrency(total, newInvoice!.currency)}</td></tr>
-              </table>
-          </td></tr>
-          <tr><td colspan="2" style="padding-top: 40px;">
-            <h4 style="margin: 0 0 5px; font-weight: bold;">Notes</h4>
-            <p style="margin: 0; color: #555; font-size: 14px;">${newInvoice.notes || 'Thank you for your business. Please pay within the due date.'}</p>
-          </td></tr>
-        </table>
+          <h1 style="font-size: 24px; font-weight: bold;">Invoice from ${settings.companyProfile.name}</h1>
+          <p>Hi ${newInvoice.clientName},</p>
+          <p>Here is your invoice #${newInvoice.invoiceNumber} for ${formatCurrency(total, newInvoice.currency)}.</p>
+          ${newInvoice.paymentLink ? `<a href="${newInvoice.paymentLink}" style="background-color: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0;">Pay Now</a>` : ''}
+          <p>You can also view the attached PDF for full details.</p>
+          <p>Thank you for your business!</p>
+          <p>Best regards,<br>${settings.companyProfile.name}</p>
       </div>
       `;
 
@@ -244,15 +201,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       // Header
       if (settings.appLogo) {
         try {
-          // Check if it's a data URL or a regular URL
-          if (settings.appLogo.startsWith('data:image')) {
-            doc.addImage(settings.appLogo, 'PNG', 14, 15, 20, 20);
-          } else {
-            // Assumes it's a regular URL, will require CORS to be configured on the image host
-            // For simplicity, we're not handling the async nature of fetching remote images here.
-            // A more robust solution would fetch the image and convert to data URI first.
-            doc.addImage(settings.appLogo, 'PNG', 14, 15, 20, 20);
-          }
+          doc.addImage(settings.appLogo, 'PNG', 14, 15, 20, 20);
         } catch(e) { console.error("Could not add logo to PDF:", e)}
       }
       doc.setFontSize(20);
@@ -303,11 +252,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               formatCurrency(item.price, newInvoice!.currency, true),
               formatCurrency(item.quantity * item.price, newInvoice!.currency, true),
           ]),
-          headStyles: {
-            fillColor: [248, 249, 250],
-            textColor: 50,
-            fontStyle: 'bold',
-          },
           columnStyles: {
             0: { halign: 'left' },
             1: { halign: 'center' },
@@ -316,13 +260,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             4: { halign: 'right' }
           },
           didParseCell: function (data) {
-            if (data.section === 'head') {
-                if (data.column.index === 1 || data.column.index === 2) {
-                    data.cell.styles.halign = 'center';
-                }
-                if (data.column.index === 3 || data.column.index === 4) {
-                    data.cell.styles.halign = 'right';
-                }
+            if (data.section === 'head' && data.row.index === 0) {
+              const columnStyles = data.table.settings.columnStyles;
+              if (columnStyles && columnStyles[data.column.index]) {
+                data.cell.styles.halign = columnStyles[data.column.index].halign;
+              }
             }
           },
       });
@@ -360,6 +302,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       doc.setFont('helvetica', 'bold');
       doc.text(formatCurrency(total, newInvoice.currency, true), 196, summaryY + 6, { align: 'right' });
 
+      // Payment Link
+      if (newInvoice.paymentLink) {
+        doc.setFontSize(11);
+        doc.setTextColor(40, 116, 240); // Blue color for link
+        doc.textWithLink('Click here to pay online', 14, summaryY + 12, { url: newInvoice.paymentLink });
+      }
 
       // Footer Notes
       const notesStartY = summaryY + 30;
@@ -438,18 +386,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
         // 3. Update the invoice itself
         const subtotal = updatedInvoiceData.items.reduce((acc, item) => acc + item.quantity * item.price, 0);
-        const updatedInvoice: Invoice = {
+        const taxAmount = calculateTaxAmount(subtotal, updatedInvoiceData.taxId);
+        const total = subtotal + taxAmount;
+        
+        let updatedInvoice: Invoice = {
           ...updatedInvoiceData,
           currency: settings.currency,
           items: updatedInvoiceData.items.map(item => ({...item, id: item.id || generateId()})),
-          taxAmount: calculateTaxAmount(subtotal, updatedInvoiceData.taxId),
+          taxAmount: taxAmount,
         };
+        
+        updatedInvoice.paymentLink = generatePaymentLink(updatedInvoice, total);
         
         setInvoices(prevInvoices => prevInvoices.map(inv => inv.id === updatedInvoice.id ? updatedInvoice : inv));
 
         return newProducts;
     });
-  }, [invoices, setInvoices, setProducts, settings.currency, settings.taxes]);
+  }, [invoices, setInvoices, setProducts, settings.currency, settings.taxes, settings.paymentGateway]);
 
 
   const deleteInvoice = useCallback((id: string) => {
@@ -653,5 +606,3 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   return <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>;
 }
-
-    

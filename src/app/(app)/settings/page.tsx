@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -42,6 +43,10 @@ const settingsSchema = z.object({
   }),
   email: z.object({
       sendOnNewInvoice: z.boolean(),
+  }),
+  paymentGateway: z.object({
+      enabled: z.boolean(),
+      paymentLinkBaseUrl: z.string().url('Must be a valid URL').or(z.literal('')),
   })
 });
 
@@ -334,6 +339,57 @@ export default function SettingsPage() {
                 </CardContent>
             </Card>
 
+            <Card>
+                <CardHeader>
+                    <CardTitle>Payment Gateway</CardTitle>
+                    <CardDescription>
+                        Configure a payment link to include in your invoices.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <FormField
+                        control={form.control}
+                        name="paymentGateway.enabled"
+                        render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                <div className="space-y-0.5">
+                                    <FormLabel className="text-base">Enable Payment Link</FormLabel>
+                                    <p className="text-sm text-muted-foreground">
+                                        Include a link for online payment in your invoices.
+                                    </p>
+                                </div>
+                                <FormControl>
+                                    <Switch
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                    />
+                                </FormControl>
+                            </FormItem>
+                        )}
+                    />
+                     <FormField
+                        control={form.control}
+                        name="paymentGateway.paymentLinkBaseUrl"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Payment Link Base URL</FormLabel>
+                                <FormControl>
+                                    <Input 
+                                        placeholder="e.g., https://buy.stripe.com/..." 
+                                        {...field} 
+                                        disabled={!form.watch('paymentGateway.enabled')}
+                                    />
+                                </FormControl>
+                                 <p className="text-sm text-muted-foreground">
+                                    This is the base URL for your payment link. Invoice details will be added as query parameters.
+                                </p>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </CardContent>
+            </Card>
+
             <Card className="lg:col-span-3">
                 <CardHeader>
                     <CardTitle>Email Notifications</CardTitle>
@@ -523,5 +579,3 @@ export default function SettingsPage() {
         </Dialog>
     </div>
   );
-
-    

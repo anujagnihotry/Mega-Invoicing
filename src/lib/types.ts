@@ -33,6 +33,7 @@ export type Invoice = {
   taxId?: string | null;
   taxAmount?: number;
   notes?: string;
+  paymentLink?: string;
 };
 
 export type CompanyProfile = {
@@ -59,6 +60,11 @@ export type EmailSettings = {
   sendOnNewInvoice: boolean;
 };
 
+export type PaymentGatewaySettings = {
+    enabled: boolean;
+    paymentLinkBaseUrl: string;
+};
+
 export type AppSettings = {
   appName: string;
   appLogo?: string;
@@ -69,6 +75,7 @@ export type AppSettings = {
   taxes: Tax[];
   smtp: SMTPSettings;
   email: EmailSettings;
+  paymentGateway: PaymentGatewaySettings;
 };
 
 export type Unit = {
