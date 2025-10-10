@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -75,11 +76,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [invoices]);
 
   const getSupplier = useCallback((id: string): Supplier | undefined => {
-    return suppliers.find(supplier => supplier.id === supplier.id);
+    return suppliers.find(supplier => supplier.id === id);
   }, [suppliers]);
   
   const getPurchaseOrder = useCallback((id: string): PurchaseOrder | undefined => {
-    return purchaseOrders.find(p => p.id === p.id);
+    return purchaseOrders.find(p => p.id === id);
   }, [purchaseOrders]);
 
   const getProduct = useCallback((id: string): Product | undefined => {
@@ -167,7 +168,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         <table style="width: 100%; border-collapse: collapse;">
           <tr>
             <td style="padding-bottom: 20px; vertical-align: top;">
-              ${settings.appLogo ? `<img src="${settings.appLogo}" alt="${settings.appName}" style="height: 64px; width: auto;">` : ''}
               <h1 style="font-size: 24px; margin: 0; font-weight: bold;">${settings.companyProfile.name}</h1>
               <p style="margin: 0; font-size: 14px; color: #555;">${settings.companyProfile.address.replace(/\n/g, '<br>')}</p>
               <p style="margin: 0; font-size: 14px; color: #555;">${settings.companyProfile.phone}</p>
@@ -187,18 +187,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                   </td>
                   <td style="width: 50%; text-align: right; vertical-align: top;">
                     <table style="width: 250px; margin-left: auto; text-align: right;">
-                      <tr>
-                        <td style="font-weight: bold; color: #555;">Invoice #</td>
-                        <td>${newInvoice.invoiceNumber}</td>
-                      </tr>
-                       <tr>
-                        <td style="font-weight: bold; color: #555;">Invoice Date</td>
-                        <td>${new Date(newInvoice.invoiceDate).toLocaleDateString()}</td>
-                      </tr>
-                       <tr>
-                        <td style="font-weight: bold; color: #555;">Due Date</td>
-                        <td>${new Date(newInvoice.dueDate).toLocaleDateString()}</td>
-                      </tr>
+                      <tr><td style="font-weight: bold; color: #555;">Invoice #</td><td>${newInvoice.invoiceNumber}</td></tr>
+                      <tr><td style="font-weight: bold; color: #555;">Invoice Date</td><td>${new Date(newInvoice.invoiceDate).toLocaleDateString()}</td></tr>
+                      <tr><td style="font-weight: bold; color: #555;">Due Date</td><td>${new Date(newInvoice.dueDate).toLocaleDateString()}</td></tr>
                     </table>
                   </td>
                 </tr>
@@ -210,7 +201,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               <table style="width: 100%; border-collapse: collapse; text-align: left;">
                 <thead style="background-color: #f8f9fa;">
                   <tr>
-                    <th style="padding: 10px; text-transform: uppercase; font-size: 12px; color: #555;">Item</th>
+                    <th style="padding: 10px; text-transform: uppercase; font-size: 12px; color: #555; text-align: left;">Item</th>
                     <th style="padding: 10px; text-transform: uppercase; font-size: 12px; color: #555; text-align: center;">Quantity</th>
                     <th style="padding: 10px; text-transform: uppercase; font-size: 12px; color: #555; text-align: center;">Unit</th>
                     <th style="padding: 10px; text-transform: uppercase; font-size: 12px; color: #555; text-align: right;">Price</th>
@@ -231,33 +222,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               </table>
             </td>
           </tr>
-          <tr>
-            <td colspan="2" style="text-align: right; padding-top: 20px;">
+          <tr><td colspan="2" style="padding-top: 20px; text-align: right;">
               <table style="width: 300px; margin-left: auto; text-align: right;">
-                <tr>
-                  <td style="color: #555;">Subtotal</td>
-                  <td>${formatCurrency(subtotal, newInvoice!.currency)}</td>
-                </tr>
-                ${appliedTax ? `
-                <tr>
-                  <td style="color: #555;">${appliedTax.name} (${appliedTax.rate}%)</td>
-                  <td>${formatCurrency(newInvoice!.taxAmount || 0, newInvoice!.currency)}</td>
-                </tr>
-                ` : ''}
+                <tr><td style="color: #555;">Subtotal</td><td>${formatCurrency(subtotal, newInvoice!.currency)}</td></tr>
+                ${appliedTax ? `<tr><td style="color: #555;">${appliedTax.name} (${appliedTax.rate}%)</td><td>${formatCurrency(newInvoice!.taxAmount || 0, newInvoice!.currency)}</td></tr>` : ''}
                 <tr><td colspan="2" style="border-top: 1px solid #eee; padding-top: 10px; margin-top:10px;"></td></tr>
-                <tr style="font-weight: bold; font-size: 20px;">
-                  <td>Total</td>
-                  <td>${formatCurrency(total, newInvoice!.currency)}</td>
-                </tr>
+                <tr style="font-weight: bold; font-size: 20px;"><td>Total</td><td>${formatCurrency(total, newInvoice!.currency)}</td></tr>
               </table>
-            </td>
-          </tr>
-          <tr>
-            <td colspan="2" style="padding-top: 40px;">
-              <h4 style="margin: 0 0 5px; font-weight: bold;">Notes</h4>
-              <p style="margin: 0; color: #555; font-size: 14px;">${newInvoice.notes || 'Thank you for your business. Please pay within the due date.'}</p>
-            </td>
-          </tr>
+          </td></tr>
+          <tr><td colspan="2" style="padding-top: 40px;">
+            <h4 style="margin: 0 0 5px; font-weight: bold;">Notes</h4>
+            <p style="margin: 0; color: #555; font-size: 14px;">${newInvoice.notes || 'Thank you for your business. Please pay within the due date.'}</p>
+          </td></tr>
         </table>
       </div>
       `;
@@ -266,9 +242,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const doc = new jsPDF();
       
       // Header
-      if (settings.appLogo && settings.appLogo.startsWith('http')) {
+      if (settings.appLogo) {
         try {
-          doc.addImage(settings.appLogo, 'PNG', 14, 15, 20, 20);
+          // Check if it's a data URL or a regular URL
+          if (settings.appLogo.startsWith('data:image')) {
+            doc.addImage(settings.appLogo, 'PNG', 14, 15, 20, 20);
+          } else {
+            // Assumes it's a regular URL, will require CORS to be configured on the image host
+            // For simplicity, we're not handling the async nature of fetching remote images here.
+            // A more robust solution would fetch the image and convert to data URI first.
+            doc.addImage(settings.appLogo, 'PNG', 14, 15, 20, 20);
+          }
         } catch(e) { console.error("Could not add logo to PDF:", e)}
       }
       doc.setFontSize(20);
@@ -323,7 +307,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             fillColor: [248, 249, 250],
             textColor: 50,
             fontStyle: 'bold',
-            halign: 'left', // Default header alignment
           },
           columnStyles: {
             0: { halign: 'left' },
@@ -333,11 +316,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             4: { halign: 'right' }
           },
           didParseCell: function (data) {
-            if (data.section === 'head' && data.table.head[0]?.[data.column.index]) {
-                const colIndex = data.column.index;
-                const colStyles = data.table.settings.columnStyles;
-                if (colStyles && colStyles[colIndex]) {
-                    data.cell.styles.halign = colStyles[colIndex].halign;
+            if (data.section === 'head') {
+                if (data.column.index === 1 || data.column.index === 2) {
+                    data.cell.styles.halign = 'center';
+                }
+                if (data.column.index === 3 || data.column.index === 4) {
+                    data.cell.styles.halign = 'right';
                 }
             }
           },
@@ -388,19 +372,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       const pdfBase64 = doc.output('datauristring').split(',')[1];
       
-      sendEmail({
-          to: newInvoice.clientEmail,
-          subject: `Invoice #${newInvoice.invoiceNumber} from ${settings.appName}`,
-          html: emailHtml,
-          smtpConfig: settings.smtp,
-          attachments: [
-              {
-                  filename: `Invoice-${newInvoice.invoiceNumber}.pdf`,
-                  content: pdfBase64,
-                  encoding: 'base64',
-              }
-          ]
-      }).catch(err => {
+      try {
+        sendEmail({
+            to: newInvoice.clientEmail,
+            subject: `Invoice #${newInvoice.invoiceNumber} from ${settings.appName}`,
+            html: emailHtml,
+            smtpConfig: settings.smtp,
+            attachments: [
+                {
+                    filename: `Invoice-${newInvoice.invoiceNumber}.pdf`,
+                    content: pdfBase64,
+                    encoding: 'base64',
+                }
+            ]
+        });
+      } catch (err) {
             const errorMessage = (err as Error).message || '';
             let description = 'Please check your SMTP settings and try again.';
             if (errorMessage.includes('Application-specific password required')) {
@@ -415,7 +401,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                 description: description,
             });
             console.error(err);
-      });
+      }
     }
 
   }, [setInvoices, setProducts, settings, toast, products, units]);
@@ -667,3 +653,5 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   return <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>;
 }
+
+    
