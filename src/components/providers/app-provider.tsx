@@ -163,88 +163,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
 
       const emailHtml = `
-      <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd;">
-        <table style="width: 100%; border-collapse: collapse;">
-            <tr>
-                <td style="padding-bottom: 20px; vertical-align: top;">
-                    ${settings.appLogo ? `<img src="${settings.appLogo}" alt="${settings.appName}" style="height: 64px; width: auto; max-width: 200px;">` : ''}
-                    <h1 style="font-size: 20px; margin: 10px 0 0 0;">${settings.companyProfile.name}</h1>
-                    <p style="margin: 0; color: #555;">${settings.companyProfile.address.replace(/\n/g, '<br>')}</p>
-                    <p style="margin: 0; color: #555;">${settings.companyProfile.phone}</p>
-                </td>
-                <td style="text-align: right; vertical-align: top;">
-                    <h2 style="font-size: 28px; margin: 0; color: #888;">INVOICE</h2>
-                </td>
-            </tr>
-            <tr><td colspan="2" style="padding-top: 20px;"></td></tr>
-            <tr>
-                <td style="vertical-align: top;">
-                    <p style="margin: 0; color: #555;"><strong>Bill To</strong></p>
-                    <p style="margin: 0;">${newInvoice.clientName}</p>
-                    <p style="margin: 0;">${newInvoice.clientEmail}</p>
-                </td>
-                <td style="text-align: right; vertical-align: top;">
-                    <p style="margin: 0;"><strong>Invoice #:</strong> ${newInvoice.invoiceNumber}</p>
-                    <p style="margin: 0;"><strong>Date:</strong> ${new Date(newInvoice.invoiceDate).toLocaleDateString()}</p>
-                    <p style="margin: 0;"><strong>Due Date:</strong> ${new Date(newInvoice.dueDate).toLocaleDateString()}</p>
-                </td>
-            </tr>
-            <tr><td colspan="2" style="padding-top: 30px;"></td></tr>
-            <tr>
-                <td colspan="2">
-                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
-                        <thead>
-                            <tr style="background-color: #f8f8f8;">
-                                <th style="padding: 10px; border-bottom: 2px solid #ddd; text-align: left;">Item</th>
-                                <th style="padding: 10px; border-bottom: 2px solid #ddd; text-align: center;">Quantity</th>
-                                <th style="padding: 10px; border-bottom: 2px solid #ddd; text-align: center;">Unit</th>
-                                <th style="padding: 10px; border-bottom: 2px solid #ddd; text-align: right;">Price</th>
-                                <th style="padding: 10px; border-bottom: 2px solid #ddd; text-align: right;">Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${newInvoice.items.map(item => `
-                                <tr style="border-bottom: 1px solid #eee;">
-                                    <td style="padding: 10px; text-align: left;">${getProductName(item.productId)}</td>
-                                    <td style="padding: 10px; text-align: center;">${item.quantity}</td>
-                                    <td style="padding: 10px; text-align: center;">${getUnitName(item.productId)}</td>
-                                    <td style="padding: 10px; text-align: right;">${formatCurrency(item.price, newInvoice!.currency)}</td>
-                                    <td style="padding: 10px; text-align: right;">${formatCurrency(item.quantity * item.price, newInvoice!.currency)}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </td>
-            </tr>
-            <tr>
-                <td colspan="2" style="padding-top: 20px; text-align: right;">
-                    <table style="width: 50%; margin-left: 50%; border-collapse: collapse;">
-                        <tr>
-                            <td style="padding: 5px;">Subtotal</td>
-                            <td style="padding: 5px; text-align: right;">${formatCurrency(subtotal, newInvoice.currency)}</td>
-                        </tr>
-                        ${appliedTax ? `
-                        <tr>
-                            <td style="padding: 5px;">${appliedTax.name} (${appliedTax.rate}%)</td>
-                            <td style="padding: 5px; text-align: right;">${formatCurrency(newInvoice.taxAmount || 0, newInvoice.currency)}</td>
-                        </tr>
-                        ` : ''}
-                        <tr style="font-weight: bold; border-top: 2px solid #ddd;">
-                            <td style="padding: 10px 5px;">Total</td>
-                            <td style="padding: 10px 5px; text-align: right;">${formatCurrency(total, newInvoice.currency)}</td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
-            ${newInvoice.notes ? `
-            <tr>
-                <td colspan="2" style="padding-top: 30px;">
-                    <strong>Notes:</strong>
-                    <p style="margin:0; color: #555;">${newInvoice.notes}</p>
-                </td>
-            </tr>
-            ` : ''}
-        </table>
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd;">
+        <h2 style="color: #444;">Invoice from ${settings.companyProfile.name}</h2>
+        <p>Dear ${newInvoice.clientName},</p>
+        <p>Please find attached your invoice #${newInvoice.invoiceNumber}.</p>
+        <p><strong>Total Amount Due: ${formatCurrency(total, newInvoice.currency)}</strong></p>
+        <p><strong>Due Date: ${new Date(newInvoice.dueDate).toLocaleDateString()}</strong></p>
+        <br>
+        <p>Thank you for your business!</p>
+        <p><em>${settings.companyProfile.name}</em></p>
       </div>
       `;
 
@@ -252,8 +179,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const doc = new jsPDF();
       
       // Header
-      if (settings.appLogo) {
+      if (settings.appLogo && settings.appLogo.startsWith('http')) {
         try {
+          // This is a simplified approach. A more robust solution might involve fetching the image first.
+          // jsPDF has limitations with cross-origin images unless the server has CORS enabled.
+          // For simplicity, we assume the logo can be loaded.
           doc.addImage(settings.appLogo, 'PNG', 14, 15, 20, 20);
         } catch(e) { console.error("Could not add logo to PDF:", e)}
       }
@@ -309,6 +239,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             fillColor: [248, 249, 250],
             textColor: 50,
             fontStyle: 'bold',
+            halign: 'center' // Default alignment for headers
           },
           columnStyles: {
             0: { halign: 'left' },
@@ -317,6 +248,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             3: { halign: 'right' },
             4: { halign: 'right' }
           },
+          didParseCell: function (data) {
+              if (data.section === 'head') {
+                  // Apply specific alignments to header cells based on the columnStyles
+                  const colIndex = data.column.index;
+                  if (data.table.options.columnStyles[colIndex]) {
+                      data.cell.styles.halign = data.table.options.columnStyles[colIndex].halign;
+                  }
+              }
+          }
       });
       
       const finalY = (doc as any).lastAutoTable.finalY;
@@ -364,48 +304,34 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       const pdfBase64 = doc.output('datauristring').split(',')[1];
       
-      try {
-        sendEmail({
-            to: newInvoice.clientEmail,
-            subject: `Invoice #${newInvoice.invoiceNumber} from ${settings.appName}`,
-            html: emailHtml,
-            smtpConfig: settings.smtp,
-            attachments: [
-                {
-                    filename: `Invoice-${newInvoice.invoiceNumber}.pdf`,
-                    content: pdfBase64,
-                    encoding: 'base64',
-                }
-            ]
-        }).then(() => {
-            toast({
-                title: 'Email Sent',
-                description: `Invoice sent to ${newInvoice?.clientEmail}.`,
-            });
-        }).catch(err => {
-              const errorMessage = (err as Error).message || '';
-              let description = 'Please check your SMTP settings and try again.';
-              if (errorMessage.includes('Application-specific password required')) {
-                  description = 'Your email provider requires an "App Password" for SMTP. Please generate one in your account settings and update it in the app.';
-              } else if (errorMessage.includes('Invalid login')) {
-                  description = 'Invalid SMTP credentials. Please check the username and password in settings.';
+      sendEmail({
+          to: newInvoice.clientEmail,
+          subject: `Invoice #${newInvoice.invoiceNumber} from ${settings.appName}`,
+          html: emailHtml,
+          smtpConfig: settings.smtp,
+          attachments: [
+              {
+                  filename: `Invoice-${newInvoice.invoiceNumber}.pdf`,
+                  content: pdfBase64,
+                  encoding: 'base64',
               }
-              
-              toast({
-                  variant: 'destructive',
-                  title: 'Email Failed to Send',
-                  description: description,
-              });
-              console.error(err);
-        })
-      } catch (err) {
-        console.error("Failed to call sendEmail flow", err);
-         toast({
-              variant: 'destructive',
-              title: 'Email Error',
-              description: 'An unexpected error occurred while trying to send the email.',
-          });
-      }
+          ]
+      }).catch(err => {
+            const errorMessage = (err as Error).message || '';
+            let description = 'Please check your SMTP settings and try again.';
+            if (errorMessage.includes('Application-specific password required')) {
+                description = 'Your email provider requires an "App Password" for SMTP. Please generate one in your account settings and update it in the app.';
+            } else if (errorMessage.includes('Invalid login')) {
+                description = 'Invalid SMTP credentials. Please check the username and password in settings.';
+            }
+            
+            toast({
+                variant: 'destructive',
+                title: 'Email Failed to Send',
+                description: description,
+            });
+            console.error(err);
+      });
     }
 
   }, [setInvoices, setProducts, settings, toast, products, units]);
