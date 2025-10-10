@@ -352,14 +352,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               formatCurrency(item.price, newInvoice!.currency, true),
               formatCurrency(item.quantity * item.price, newInvoice!.currency, true),
           ]),
-          headStyles: { fillColor: [248, 249, 250], textColor: 50, fontStyle: 'bold', halign: 'left' },
-          styles: { halign: 'left' },
+          headStyles: {
+            fillColor: [248, 249, 250],
+            textColor: 50,
+            fontStyle: 'bold',
+            halign: 'left'
+          },
           columnStyles: {
-              0: { halign: 'left', fontStyle: 'bold' },
-              1: { halign: 'center' },
-              2: { halign: 'center' },
-              3: { halign: 'right' },
-              4: { halign: 'right', fontStyle: 'bold' },
+            0: { halign: 'left' },
+            1: { halign: 'center' },
+            2: { halign: 'center' },
+            3: { halign: 'right' },
+            4: { halign: 'right' }
+          },
+          didParseCell: function (data) {
+            if (data.section === 'head') {
+              if (data.column.index === 1 || data.column.index === 2) {
+                data.cell.styles.halign = 'center';
+              }
+              if (data.column.index === 3 || data.column.index === 4) {
+                data.cell.styles.halign = 'right';
+              }
+            }
           }
       });
       
@@ -408,39 +422,48 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       const pdfBase64 = doc.output('datauristring').split(',')[1];
       
-      sendEmail({
-          to: newInvoice.clientEmail,
-          subject: `Invoice #${newInvoice.invoiceNumber} from ${settings.companyProfile.name}`,
-          html: emailHtml,
-          smtpConfig: settings.smtp,
-          attachments: [
-              {
-                  filename: `Invoice-${newInvoice.invoiceNumber}.pdf`,
-                  content: pdfBase64,
-                  encoding: 'base64',
-              }
-          ]
-      }).then(() => {
-          toast({
-              title: 'Email Sent',
-              description: `Invoice sent to ${newInvoice?.clientEmail}.`,
-          });
-      }).catch(err => {
-            const errorMessage = (err as Error).message || '';
-            let description = 'Please check your SMTP settings and try again.';
-            if (errorMessage.includes('Application-specific password required')) {
-                description = 'Your email provider requires an "App Password" for SMTP. Please generate one in your account settings and update it in the app.';
-            } else if (errorMessage.includes('Invalid login')) {
-                description = 'Invalid SMTP credentials. Please check the username and password in settings.';
-            }
-            
+      try {
+        sendEmail({
+            to: newInvoice.clientEmail,
+            subject: `Invoice #${newInvoice.invoiceNumber} from ${settings.companyProfile.name}`,
+            html: emailHtml,
+            smtpConfig: settings.smtp,
+            attachments: [
+                {
+                    filename: `Invoice-${newInvoice.invoiceNumber}.pdf`,
+                    content: pdfBase64,
+                    encoding: 'base64',
+                }
+            ]
+        }).then(() => {
             toast({
-                variant: 'destructive',
-                title: 'Email Failed to Send',
-                description: description,
+                title: 'Email Sent',
+                description: `Invoice sent to ${newInvoice?.clientEmail}.`,
             });
-            console.error(err);
-      })
+        }).catch(err => {
+              const errorMessage = (err as Error).message || '';
+              let description = 'Please check your SMTP settings and try again.';
+              if (errorMessage.includes('Application-specific password required')) {
+                  description = 'Your email provider requires an "App Password" for SMTP. Please generate one in your account settings and update it in the app.';
+              } else if (errorMessage.includes('Invalid login')) {
+                  description = 'Invalid SMTP credentials. Please check the username and password in settings.';
+              }
+              
+              toast({
+                  variant: 'destructive',
+                  title: 'Email Failed to Send',
+                  description: description,
+              });
+              console.error(err);
+        })
+      } catch (err) {
+        console.error("Failed to call sendEmail flow", err);
+         toast({
+              variant: 'destructive',
+              title: 'Email Error',
+              description: 'An unexpected error occurred while trying to send the email.',
+          });
+      }
     }
 
   }, [setInvoices, setProducts, settings, toast, products, units]);
