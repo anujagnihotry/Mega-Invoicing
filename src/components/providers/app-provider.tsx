@@ -120,12 +120,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!settings.paymentGateway.enabled || !settings.paymentGateway.paymentLinkBaseUrl) {
       return undefined;
     }
-    const url = new URL(settings.paymentGateway.paymentLinkBaseUrl);
-    url.searchParams.append('invoice_id', invoice.invoiceNumber);
-    url.searchParams.append('amount', total.toFixed(2));
-    url.searchParams.append('currency', invoice.currency);
-    url.searchParams.append('description', `Payment for Invoice #${invoice.invoiceNumber}`);
-    return url.toString();
+    try {
+      const url = new URL(settings.paymentGateway.paymentLinkBaseUrl);
+      
+      // If the base URL does not already have search parameters, append the invoice details.
+      // This is for generic payment URLs. For Stripe Payment Links, you'd paste the full link,
+      // which might already contain product/price IDs, so we shouldn't add more params.
+      if (!url.search) {
+        url.searchParams.append('invoice_id', invoice.invoiceNumber);
+        url.searchParams.append('amount', total.toFixed(2));
+        url.searchParams.append('currency', invoice.currency);
+        url.searchParams.append('description', `Payment for Invoice #${invoice.invoiceNumber}`);
+      }
+      
+      return url.toString();
+    } catch (error) {
+      console.error("Invalid Payment Link Base URL:", error);
+      toast({
+        variant: 'destructive',
+        title: 'Invalid Payment URL',
+        description: 'The Payment Link Base URL in your settings is not a valid URL.'
+      })
+      return undefined;
+    }
   };
 
   const addInvoice = useCallback((invoiceData: Omit<Invoice, 'id' | 'currency' | 'taxAmount'>) => {
@@ -260,13 +277,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             4: { halign: 'right' }
           },
           didParseCell: function (data) {
-            if (data.section === 'head' && data.row.index === 0) {
-              const columnStyles = data.table.settings.columnStyles;
-              if (columnStyles && columnStyles[data.column.index]) {
-                data.cell.styles.halign = columnStyles[data.column.index].halign;
+            if (data.section === 'head' && data.table.settings.columnStyles) {
+              const colStyles = data.table.settings.columnStyles;
+              if (colStyles[data.column.index]) {
+                data.cell.styles.halign = colStyles[data.column.index].halign;
               }
             }
-          },
+          }
       });
       
       const finalY = (doc as any).lastAutoTable.finalY;
@@ -402,7 +419,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
         return newProducts;
     });
-  }, [invoices, setInvoices, setProducts, settings.currency, settings.taxes, settings.paymentGateway]);
+  }, [invoices, setInvoices, setProducts, settings.currency, settings.taxes, settings.paymentGateway, toast]);
 
 
   const deleteInvoice = useCallback((id: string) => {
@@ -590,7 +607,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     suppliers,
     addSupplier,
     updateSupplier,
-    deleteSupplier,
+deleteSupplier,
     getSupplier,
     purchaseEntries,
     addPurchaseEntry: addPurchaseEntry as any,

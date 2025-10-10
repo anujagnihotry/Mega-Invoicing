@@ -381,7 +381,7 @@ export default function SettingsPage() {
                                     />
                                 </FormControl>
                                  <p className="text-sm text-muted-foreground">
-                                    This is the base URL for your payment link. Invoice details will be added as query parameters.
+                                    Enter your full payment link URL (e.g., from Stripe or another gateway). Invoice details will be appended if the URL does not contain query params.
                                 </p>
                                 <FormMessage />
                             </FormItem>
@@ -558,7 +558,7 @@ export default function SettingsPage() {
                                     <FormLabel>Tax Name</FormLabel>
                                     <FormControl><Input placeholder="e.g. GST, VAT" {...field} /></FormControl>
                                     <FormMessage />
-                                </FormItem>
+                                </Item>
                             )}
                         />
                         <FormField
@@ -569,7 +569,7 @@ export default function SettingsPage() {
                                     <FormLabel>Rate (%)</FormLabel>
                                     <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
                                     <FormMessage />
-                                </FormItem>
+                                </Item>
                             )}
                         />
                         <Button type="submit">Save Changes</Button>
