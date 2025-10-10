@@ -120,19 +120,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!settings.paymentGateway.enabled || !settings.paymentGateway.paymentLinkBaseUrl) {
       return undefined;
     }
+    
+    // The user will provide a full, pre-configured payment link (e.g., from Stripe or PayPal).
+    // We just use that URL directly.
     try {
       const url = new URL(settings.paymentGateway.paymentLinkBaseUrl);
-      
-      // If the base URL does not already have search parameters, append the invoice details.
-      // This is for generic payment URLs. For Stripe Payment Links, you'd paste the full link,
-      // which might already contain product/price IDs, so we shouldn't add more params.
-      if (!url.search) {
-        url.searchParams.append('invoice_id', invoice.invoiceNumber);
-        url.searchParams.append('amount', total.toFixed(2));
-        url.searchParams.append('currency', invoice.currency);
-        url.searchParams.append('description', `Payment for Invoice #${invoice.invoiceNumber}`);
-      }
-      
       return url.toString();
     } catch (error) {
       console.error("Invalid Payment Link Base URL:", error);
