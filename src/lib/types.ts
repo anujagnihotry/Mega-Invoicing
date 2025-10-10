@@ -1,6 +1,7 @@
 
 
 
+
 export type LineItem = {
   id: string;
   productId: string; // Link to the product
@@ -64,6 +65,7 @@ export type EmailSettings = {
 export type StripeSettings = {
     secretKey: string;
     publishableKey: string;
+    webhookSecret: string;
     dashboardUrl: string;
     webhookUrl: string;
 };
@@ -152,3 +154,4 @@ export type Supplier = {
   phone: string;
   address: string;
 };
+

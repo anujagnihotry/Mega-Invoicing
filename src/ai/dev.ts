@@ -1,5 +1,5 @@
 import { config } from 'dotenv';
-config();
+config({ path: '.env.local' });
 
 import '@/ai/flows/invoice-readability.ts';
 import '@/ai/flows/send-email.ts';

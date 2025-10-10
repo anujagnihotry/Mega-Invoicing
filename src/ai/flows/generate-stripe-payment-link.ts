@@ -38,7 +38,7 @@ const generateStripePaymentLinkFlow = ai.defineFlow(
     outputSchema: GenerateStripePaymentLinkOutputSchema,
   },
   async (input) => {
-    const { amount, currency, description, stripeSecretKey } = input;
+    const { amount, currency, description, stripeSecretKey, invoice_id } = input;
 
     // Stripe requires the amount in the smallest currency unit (e.g., cents)
     const unitAmount = Math.round(amount * 100);
@@ -48,6 +48,7 @@ const generateStripePaymentLinkFlow = ai.defineFlow(
     formData.append('line_items[0][price_data][product_data][name]', description);
     formData.append('line_items[0][price_data][unit_amount]', unitAmount.toString());
     formData.append('line_items[0][quantity]', '1');
+    formData.append('payment_intent_data[metadata][invoice_id]', invoice_id);
 
     const response = await fetch('https://api.stripe.com/v1/payment_links', {
       method: 'POST',

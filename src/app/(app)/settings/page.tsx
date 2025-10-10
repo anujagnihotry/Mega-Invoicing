@@ -46,8 +46,9 @@ const settingsSchema = z.object({
       sendOnNewInvoice: z.boolean(),
   }),
   stripe: z.object({
-    secretKey: z.string().refine(val => val.startsWith('sk_'), { message: 'Secret key must start with "sk_"' }),
-    publishableKey: z.string().refine(val => val.startsWith('pk_'), { message: 'Publishable key must start with "pk_"' }),
+    secretKey: z.string().refine(val => val === '' || val.startsWith('sk_'), { message: 'Secret key must be empty or start with "sk_"' }),
+    publishableKey: z.string().refine(val => val === '' || val.startsWith('pk_'), { message: 'Publishable key must be empty or start with "pk_"' }),
+    webhookSecret: z.string().refine(val => val === '' || val.startsWith('whsec_'), { message: 'Webhook secret must be empty or start with "whsec_"' }),
     dashboardUrl: z.string().url('Must be a valid URL'),
     webhookUrl: z.string().url('Must be a valid URL'),
   }),
@@ -78,6 +79,7 @@ export default function SettingsPage() {
       newSettings.stripe = {
         secretKey: '',
         publishableKey: '',
+        webhookSecret: '',
         dashboardUrl: 'https://dashboard.stripe.com',
         webhookUrl: webhookUrl,
       }
@@ -312,7 +314,7 @@ export default function SettingsPage() {
                         <AlertTriangle className="h-4 w-4" />
                         <AlertTitle>Security Warning</AlertTitle>
                         <AlertDescription>
-                           Your Stripe Secret Key is a sensitive credential. It will be stored in your browser's local storage. Avoid using this on public or shared computers.
+                           Your Stripe Secret Key and Webhook Secret are sensitive credentials. They will be stored in your browser's local storage. Avoid using this on public or shared computers.
                         </AlertDescription>
                     </Alert>
                     <div className="grid md:grid-cols-2 gap-4">
@@ -338,18 +340,32 @@ export default function SettingsPage() {
                                 </FormItem>
                             )}
                         />
+                         <FormField
+                            control={form.control}
+                            name="stripe.webhookSecret"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Webhook Signing Secret</FormLabel>
+                                    <FormControl><Input type="password" placeholder="whsec_..." {...field} /></FormControl>
+                                     <p className="text-sm text-muted-foreground">
+                                        Get this from your Stripe Dashboard's webhooks settings.
+                                    </p>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={form.control}
+                            name="stripe.dashboardUrl"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Stripe Dashboard URL</FormLabel>
+                                    <FormControl><Input {...field} /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
                     </div>
-                     <FormField
-                        control={form.control}
-                        name="stripe.dashboardUrl"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Stripe Dashboard URL</FormLabel>
-                                <FormControl><Input {...field} /></FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
                     <FormField
                         control={form.control}
                         name="stripe.webhookUrl"
@@ -358,7 +374,7 @@ export default function SettingsPage() {
                                 <FormLabel>Webhook URL (Read-only)</FormLabel>
                                 <FormControl><Input readOnly {...field} /></FormControl>
                                 <p className="text-sm text-muted-foreground">
-                                    Use this URL to set up a webhook in your Stripe Dashboard to listen for payment events.
+                                    Use this URL to set up a webhook in your Stripe Dashboard to listen for the `checkout.session.completed` event.
                                 </p>
                                 <FormMessage />
                             </FormItem>
@@ -610,3 +626,4 @@ export default function SettingsPage() {
     </div>
   );
 }
+

@@ -47,6 +47,7 @@ const defaultSettings: AppSettings = {
   stripe: {
     secretKey: '',
     publishableKey: '',
+    webhookSecret: '',
     dashboardUrl: 'https://dashboard.stripe.com',
     webhookUrl: '',
   },
@@ -77,6 +78,36 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
     }
   }, [isUserLoading, user, pathname, router]);
+
+   // Effect to listen for storage changes from the webhook
+  useEffect(() => {
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key?.startsWith('stripe_payment_success_')) {
+        const invoiceNumber = event.key.replace('stripe_payment_success_', '');
+        setInvoices(prevInvoices => {
+          const newInvoices = prevInvoices.map(inv => {
+            if (inv.invoiceNumber === invoiceNumber && inv.status !== 'Paid') {
+              toast({
+                title: 'Payment Received!',
+                description: `Invoice ${invoiceNumber} has been marked as paid.`,
+              });
+              return { ...inv, status: 'Paid' as InvoiceStatus };
+            }
+            return inv;
+          });
+          return newInvoices;
+        });
+        // Clean up the flag from local storage
+        localStorage.removeItem(event.key);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [setInvoices, toast]);
   
   const getInvoice = useCallback((id: string): Invoice | undefined => {
     return invoices.find(invoice => invoice.id === id);
@@ -207,14 +238,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       // Header
       if (settings.appLogo) {
         try {
-          // Check if it's a data URI or a URL
-          if(settings.appLogo.startsWith('data:image')) {
-            const img = new Image();
-            img.src = settings.appLogo;
-            img.onload = () => {
-              doc.addImage(img, 'PNG', 14, 15, 20, 20);
-            }
-          }
+            doc.addImage(settings.appLogo, 'PNG', 14, 15, 20, 20);
         } catch(e) { console.error("Could not add logo to PDF:", e)}
       }
       doc.setFontSize(20);
@@ -266,13 +290,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       doc.autoTable({
           startY: 80,
           head: [['Item', 'Quantity', 'Unit', 'Price', 'Amount']],
-          body: newInvoice.items.map(item => [
-              getProductName(item.productId),
-              item.quantity,
-              getUnitName(item.productId),
-              formatCurrency(item.price, newInvoice!.currency, true),
-              formatCurrency(item.quantity * item.price, newInvoice!.currency, true),
-          ]),
           columnStyles: {
             0: { halign: 'left' },
             1: { halign: 'center' },
@@ -280,18 +297,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             3: { halign: 'right' },
             4: { halign: 'right' }
           },
-          didParseCell: function(data) {
+          body: newInvoice.items.map(item => [
+              getProductName(item.productId),
+              item.quantity,
+              getUnitName(item.productId),
+              formatCurrency(item.price, newInvoice!.currency, true),
+              formatCurrency(item.quantity * item.price, newInvoice!.currency, true),
+          ]),
+          didParseCell: function (data) {
             if (data.section === 'head') {
-              const colIndex = data.column.index;
-              if (colIndex === 1 || colIndex === 2) { // Quantity & Unit
-                data.cell.styles.halign = 'center';
-              } else if (colIndex === 3 || colIndex === 4) { // Price & Amount
-                data.cell.styles.halign = 'right';
-              } else {
-                data.cell.styles.halign = 'left';
-              }
+                if(data.column.index === 1 || data.column.index === 2) {
+                    data.cell.styles.halign = 'center';
+                } else if(data.column.index === 3 || data.column.index === 4) {
+                    data.cell.styles.halign = 'right';
+                }
             }
-          }
+        },
       });
       
       const finalY = (doc as any).lastAutoTable.finalY;
@@ -388,8 +409,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     let paymentLink: string | undefined = updatedInvoiceData.paymentLink;
 
-    // Regenerate link only if one doesn't exist, to avoid creating new links on every edit
-    if (!paymentLink && settings.stripe?.secretKey) {
+    // Regenerate link only if one doesn't exist or amount changes, to avoid creating new links on every edit
+    const originalInvoice = invoices.find(inv => inv.id === updatedInvoiceData.id);
+    const originalTotal = originalInvoice ? (originalInvoice.items.reduce((acc, item) => acc + item.quantity * item.price, 0) + (originalInvoice.taxAmount || 0)) : 0;
+
+    if (settings.stripe?.secretKey && (!paymentLink || total !== originalTotal)) {
         try {
             const result = await generateStripePaymentLink({
                 invoice_id: updatedInvoiceData.invoiceNumber,
@@ -413,7 +437,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const newProducts = [...prevProducts];
         
         // 1. Revert stock changes from the original invoice
-        const originalInvoice = invoices.find(inv => inv.id === updatedInvoiceData.id);
         if (originalInvoice) {
             for (const item of originalInvoice.items) {
                 const productIndex = newProducts.findIndex(p => p.id === item.productId);
@@ -654,3 +677,4 @@ deleteSupplier,
 
   return <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>;
 }
+
