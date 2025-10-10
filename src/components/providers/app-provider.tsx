@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -80,11 +78,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [suppliers]);
   
   const getPurchaseOrder = useCallback((id: string): PurchaseOrder | undefined => {
-    return purchaseOrders.find(p => p.id === id);
+    return purchaseOrders.find(p => p.id === p.id);
   }, [purchaseOrders]);
 
   const getProduct = useCallback((id: string): Product | undefined => {
-    return products.find(p => p.id === productId);
+    return products.find(p => p.id === id);
   }, [products]);
 
   const getAvailableStock = useCallback((productId: string, currentInvoiceId?: string) => {
@@ -164,134 +162,88 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
 
       const emailHtml = `
-      <div style="font-family: -apple-system, 'system-ui', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; max-width: 600px; margin: 40px auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;">
-          <table width="100%" cellpadding="0" cellspacing="0" style="border-spacing: 0;">
-              <!-- Header -->
-              <tr>
-                  <td style="padding-bottom: 20px;">
-                      <table width="100%" cellpadding="0" cellspacing="0" style="border-spacing: 0;">
-                          <tr>
-                              <td style="vertical-align: top;">
-                                  <table cellpadding="0" cellspacing="0" style="border-spacing: 0;">
-                                      <tr>
-                                          ${settings.appLogo ? `<td style="padding-right: 16px;"><img src="${settings.appLogo}" alt="${settings.appName}" style="height: 64px; width: 64px;"></td>` : ''}
-                                          <td style="vertical-align: top;">
-                                              <div style="font-size: 20px; font-weight: bold; margin-bottom: 4px;">${settings.companyProfile.name}</div>
-                                              <div style="color: #666; font-size: 14px;">${settings.companyProfile.address.replace(/\n/g, '<br>')}</div>
-                                              <div style="color: #666; font-size: 14px;">${settings.companyProfile.phone}</div>
-                                          </td>
-                                      </tr>
-                                  </table>
-                              </td>
-                              <td style="text-align: right; vertical-align: top; font-size: 36px; font-weight: bold; color: #888; text-transform: uppercase; letter-spacing: 0.1em;">
-                                  INVOICE
-                              </td>
-                          </tr>
-                      </table>
-                  </td>
-              </tr>
-      
-              <!-- Billing Info -->
-              <tr>
-                  <td style="padding-top: 20px; padding-bottom: 30px;">
-                      <table width="100%" cellpadding="0" cellspacing="0" style="border-spacing: 0;">
-                          <tr>
-                              <td width="50%" style="vertical-align: top;">
-                                  <div style="font-size: 12px; color: #666;">Bill To</div>
-                                  <div style="font-size: 18px; font-weight: bold; margin: 4px 0;">${newInvoice.clientName}</div>
-                                  <div style="font-size: 14px; color: #666;">${newInvoice.clientEmail}</div>
-                                  ${newInvoice.clientContact ? `<div style="font-size: 14px; color: #666;">${newInvoice.clientContact}</div>` : ''}
-                              </td>
-                              <td width="50%" style="vertical-align: top; text-align: right;">
-                                  <table align="right" cellpadding="0" cellspacing="0" style="border-spacing: 0 4px; font-size: 14px;">
-                                      <tr>
-                                          <td style="text-align: left; padding-right: 20px; font-weight: bold; color: #666;">Invoice #</td>
-                                          <td style="text-align: right;">${newInvoice.invoiceNumber}</td>
-                                      </tr>
-                                      <tr>
-                                          <td style="text-align: left; padding-right: 20px; font-weight: bold; color: #666;">Invoice Date</td>
-                                          <td style="text-align: right;">${new Date(newInvoice.invoiceDate).toLocaleDateString()}</td>
-                                      </tr>
-                                      <tr>
-                                          <td style="text-align: left; padding-right: 20px; font-weight: bold; color: #666;">Due Date</td>
-                                          <td style="text-align: right;">${new Date(newInvoice.dueDate).toLocaleDateString()}</td>
-                                      </tr>
-                                  </table>
-                              </td>
-                          </tr>
-                      </table>
-                  </td>
-              </tr>
-      
-              <!-- Separator -->
-              <tr><td style="border-bottom: 1px solid #eee; padding-top: 10px; margin-bottom: 30px;"></td></tr>
-      
-              <!-- Items Table -->
-              <tr>
-                  <td style="padding-top: 30px; padding-bottom: 20px;">
-                      <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
-                          <thead>
-                              <tr>
-                                  <th style="padding: 10px 0; text-align: left; font-size: 12px; text-transform: uppercase; color: #666; border-bottom: 1px solid #eee;">Item</th>
-                                  <th style="padding: 10px 0; text-align: center; font-size: 12px; text-transform: uppercase; color: #666; border-bottom: 1px solid #eee;">Quantity</th>
-                                  <th style="padding: 10px 0; text-align: center; font-size: 12px; text-transform: uppercase; color: #666; border-bottom: 1px solid #eee;">Unit</th>
-                                  <th style="padding: 10px 0; text-align: right; font-size: 12px; text-transform: uppercase; color: #666; border-bottom: 1px solid #eee;">Price</th>
-                                  <th style="padding: 10px 0; text-align: right; font-size: 12px; text-transform: uppercase; color: #666; border-bottom: 1px solid #eee;">Amount</th>
-                              </tr>
-                          </thead>
-                          <tbody>
-                              ${newInvoice.items.map(item => `
-                                  <tr style="border-bottom: 1px solid #eee;">
-                                      <td style="padding: 12px 0; text-align: left; font-weight: bold;">${getProductName(item.productId)}</td>
-                                      <td style="padding: 12px 0; text-align: center;">${item.quantity}</td>
-                                      <td style="padding: 12px 0; text-align: center;">${getUnitName(item.productId)}</td>
-                                      <td style="padding: 12px 0; text-align: right;">${formatCurrency(item.price, newInvoice!.currency)}</td>
-                                      <td style="padding: 12px 0; text-align: right; font-weight: bold;">${formatCurrency(item.quantity * item.price, newInvoice!.currency)}</td>
-                                  </tr>
-                              `).join('')}
-                          </tbody>
-                      </table>
-                  </td>
-              </tr>
-      
-              <!-- Summary -->
-              <tr>
-                  <td style="padding-top: 20px;">
-                      <table width="100%" cellpadding="0" cellspacing="0" style="border-spacing: 0;">
-                          <tr>
-                              <td width="50%"></td>
-                              <td width="50%">
-                                  <table width="100%" align="right" cellpadding="0" cellspacing="0" style="border-spacing: 0 4px; font-size: 14px;">
-                                      <tr>
-                                          <td style="color: #666;">Subtotal</td>
-                                          <td style="text-align: right;">${formatCurrency(subtotal, newInvoice.currency)}</td>
-                                      </tr>
-                                      ${appliedTax ? `
-                                      <tr>
-                                          <td style="color: #666;">${appliedTax.name} (${appliedTax.rate}%)</td>
-                                          <td style="text-align: right;">${formatCurrency(newInvoice.taxAmount || 0, newInvoice.currency)}</td>
-                                      </tr>
-                                      ` : ''}
-                                      <tr><td colspan="2" style="border-bottom: 1px solid #eee; padding-top: 8px;"></td></tr>
-                                      <tr>
-                                          <td style="padding-top: 8px; font-weight: bold; font-size: 20px;">Total</td>
-                                          <td style="padding-top: 8px; text-align: right; font-weight: bold; font-size: 20px;">${formatCurrency(total, newInvoice.currency)}</td>
-                                      </tr>
-                                  </table>
-                              </td>
-                          </tr>
-                      </table>
-                  </td>
-              </tr>
-      
-              <!-- Notes -->
-              <tr>
-                  <td style="padding-top: 40px;">
-                      <p style="font-weight: bold; font-size: 12px; margin: 0 0 4px 0;">Notes</p>
-                      <p style="font-size: 12px; color: #666; margin: 0;">${newInvoice.notes || 'Thank you for your business. Please pay within the due date.'}</p>
-                  </td>
-              </tr>
-          </table>
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+                <td style="padding-bottom: 20px; vertical-align: top;">
+                    ${settings.appLogo ? `<img src="${settings.appLogo}" alt="${settings.appName}" style="height: 64px; width: auto; max-width: 200px;">` : ''}
+                    <h1 style="font-size: 20px; margin: 10px 0 0 0;">${settings.companyProfile.name}</h1>
+                    <p style="margin: 0; color: #555;">${settings.companyProfile.address.replace(/\n/g, '<br>')}</p>
+                    <p style="margin: 0; color: #555;">${settings.companyProfile.phone}</p>
+                </td>
+                <td style="text-align: right; vertical-align: top;">
+                    <h2 style="font-size: 28px; margin: 0; color: #888;">INVOICE</h2>
+                </td>
+            </tr>
+            <tr><td colspan="2" style="padding-top: 20px;"></td></tr>
+            <tr>
+                <td style="vertical-align: top;">
+                    <p style="margin: 0; color: #555;"><strong>Bill To</strong></p>
+                    <p style="margin: 0;">${newInvoice.clientName}</p>
+                    <p style="margin: 0;">${newInvoice.clientEmail}</p>
+                </td>
+                <td style="text-align: right; vertical-align: top;">
+                    <p style="margin: 0;"><strong>Invoice #:</strong> ${newInvoice.invoiceNumber}</p>
+                    <p style="margin: 0;"><strong>Date:</strong> ${new Date(newInvoice.invoiceDate).toLocaleDateString()}</p>
+                    <p style="margin: 0;"><strong>Due Date:</strong> ${new Date(newInvoice.dueDate).toLocaleDateString()}</p>
+                </td>
+            </tr>
+            <tr><td colspan="2" style="padding-top: 30px;"></td></tr>
+            <tr>
+                <td colspan="2">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead>
+                            <tr style="background-color: #f8f8f8;">
+                                <th style="padding: 10px; border-bottom: 2px solid #ddd;">Item</th>
+                                <th style="padding: 10px; border-bottom: 2px solid #ddd; text-align: center;">Quantity</th>
+                                <th style="padding: 10px; border-bottom: 2px solid #ddd; text-align: center;">Unit</th>
+                                <th style="padding: 10px; border-bottom: 2px solid #ddd; text-align: right;">Price</th>
+                                <th style="padding: 10px; border-bottom: 2px solid #ddd; text-align: right;">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${newInvoice.items.map(item => `
+                                <tr style="border-bottom: 1px solid #eee;">
+                                    <td style="padding: 10px;">${getProductName(item.productId)}</td>
+                                    <td style="padding: 10px; text-align: center;">${item.quantity}</td>
+                                    <td style="padding: 10px; text-align: center;">${getUnitName(item.productId)}</td>
+                                    <td style="padding: 10px; text-align: right;">${formatCurrency(item.price, newInvoice!.currency)}</td>
+                                    <td style="padding: 10px; text-align: right;">${formatCurrency(item.quantity * item.price, newInvoice!.currency)}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" style="padding-top: 20px; text-align: right;">
+                    <table style="width: 50%; margin-left: 50%; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 5px;">Subtotal</td>
+                            <td style="padding: 5px; text-align: right;">${formatCurrency(subtotal, newInvoice.currency)}</td>
+                        </tr>
+                        ${appliedTax ? `
+                        <tr>
+                            <td style="padding: 5px;">${appliedTax.name} (${appliedTax.rate}%)</td>
+                            <td style="padding: 5px; text-align: right;">${formatCurrency(newInvoice.taxAmount || 0, newInvoice.currency)}</td>
+                        </tr>
+                        ` : ''}
+                        <tr style="font-weight: bold; border-top: 2px solid #ddd;">
+                            <td style="padding: 10px 5px;">Total</td>
+                            <td style="padding: 10px 5px; text-align: right;">${formatCurrency(total, newInvoice.currency)}</td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            ${newInvoice.notes ? `
+            <tr>
+                <td colspan="2" style="padding-top: 30px;">
+                    <strong>Notes:</strong>
+                    <p style="margin:0; color: #555;">${newInvoice.notes}</p>
+                </td>
+            </tr>
+            ` : ''}
+        </table>
       </div>
       `;
 
@@ -356,7 +308,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             fillColor: [248, 249, 250],
             textColor: 50,
             fontStyle: 'bold',
-            halign: 'left'
           },
           columnStyles: {
             0: { halign: 'left' },
@@ -367,12 +318,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           },
           didParseCell: function (data) {
             if (data.section === 'head') {
-              if (data.column.index === 1 || data.column.index === 2) {
-                data.cell.styles.halign = 'center';
-              }
-              if (data.column.index === 3 || data.column.index === 4) {
-                data.cell.styles.halign = 'right';
-              }
+              data.cell.styles.halign = data.table.options.columnStyles[data.column.index].halign;
             }
           }
       });

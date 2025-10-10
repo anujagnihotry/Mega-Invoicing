@@ -8,7 +8,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 import * as nodemailer from 'nodemailer';
 
 const SendEmailInputSchema = z.object({
@@ -54,7 +54,7 @@ const sendEmailFlow = ai.defineFlow(
 
     try {
       await transporter.sendMail({
-        from: `"${process.env.APP_NAME}" <${smtpConfig.user}>`, // sender address
+        from: `"${process.env.APP_NAME || 'SwiftInvoice'}" <${smtpConfig.user}>`, // sender address
         to: to, // list of receivers
         subject: subject, // Subject line
         html: html, // html body
