@@ -1,5 +1,6 @@
 
 
+
 export type LineItem = {
   id: string;
   productId: string; // Link to the product
@@ -60,9 +61,11 @@ export type EmailSettings = {
   sendOnNewInvoice: boolean;
 };
 
-export type PaymentGatewaySettings = {
-    enabled: boolean;
-    paymentLinkBaseUrl: string;
+export type StripeSettings = {
+    secretKey: string;
+    publishableKey: string;
+    dashboardUrl: string;
+    webhookUrl: string;
 };
 
 export type AppSettings = {
@@ -75,7 +78,7 @@ export type AppSettings = {
   taxes: Tax[];
   smtp: SMTPSettings;
   email: EmailSettings;
-  paymentGateway: PaymentGatewaySettings;
+  stripe: StripeSettings;
 };
 
 export type Unit = {
@@ -129,7 +132,7 @@ export type PurchaseOrder = {
 export type PurchaseEntryStatus = 'Draft' | 'Completed';
 
 export type PurchaseEntry = {
-    id: string;
+    id:string;
     purchaseOrderId?: string; // Link to the original PO
     entryDate: string;
     supplierId: string;

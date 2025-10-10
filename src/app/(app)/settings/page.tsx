@@ -16,12 +16,13 @@ import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { MoreHorizontal, PlusCircle, Trash2, Pencil, Image as ImageIcon, Upload } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Trash2, Pencil, Image as ImageIcon, Upload, AlertTriangle } from 'lucide-react';
 import type { AppSettings, Tax } from '@/lib/types';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Switch } from '@/components/ui/switch';
 import Image from 'next/image';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 const currencies = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'INR'];
 
@@ -44,10 +45,12 @@ const settingsSchema = z.object({
   email: z.object({
       sendOnNewInvoice: z.boolean(),
   }),
-  paymentGateway: z.object({
-      enabled: z.boolean(),
-      paymentLinkBaseUrl: z.string().url('Must be a valid URL').or(z.literal('')),
-  })
+  stripe: z.object({
+    secretKey: z.string().refine(val => val.startsWith('sk_'), { message: 'Secret key must start with "sk_"' }),
+    publishableKey: z.string().refine(val => val.startsWith('pk_'), { message: 'Publishable key must start with "pk_"' }),
+    dashboardUrl: z.string().url('Must be a valid URL'),
+    webhookUrl: z.string().url('Must be a valid URL'),
+  }),
 });
 
 const taxFormSchema = z.object({
@@ -69,7 +72,18 @@ export default function SettingsPage() {
   });
   
   React.useEffect(() => {
-    form.reset(settings);
+    const webhookUrl = `${window.location.origin}/api/webhooks/stripe`;
+    const newSettings = { ...settings };
+    if (!newSettings.stripe) {
+      newSettings.stripe = {
+        secretKey: '',
+        publishableKey: '',
+        dashboardUrl: 'https://dashboard.stripe.com',
+        webhookUrl: webhookUrl,
+      }
+    }
+    newSettings.stripe.webhookUrl = webhookUrl;
+    form.reset(newSettings);
   }, [settings, form]);
 
 
@@ -285,6 +299,73 @@ export default function SettingsPage() {
                   </CardContent>
               </Card>
           </div>
+
+          <Card>
+                <CardHeader>
+                    <CardTitle>Stripe Payments</CardTitle>
+                    <CardDescription>
+                        Configure your Stripe account to accept payments via generated links.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <Alert variant="destructive">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertTitle>Security Warning</AlertTitle>
+                        <AlertDescription>
+                           Your Stripe Secret Key is a sensitive credential. It will be stored in your browser's local storage. Avoid using this on public or shared computers.
+                        </AlertDescription>
+                    </Alert>
+                    <div className="grid md:grid-cols-2 gap-4">
+                        <FormField
+                            control={form.control}
+                            name="stripe.secretKey"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Stripe Secret Key</FormLabel>
+                                    <FormControl><Input type="password" placeholder="sk_test_..." {...field} /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="stripe.publishableKey"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Stripe Publishable Key</FormLabel>
+                                    <FormControl><Input placeholder="pk_test_..." {...field} /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </div>
+                     <FormField
+                        control={form.control}
+                        name="stripe.dashboardUrl"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Stripe Dashboard URL</FormLabel>
+                                <FormControl><Input {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="stripe.webhookUrl"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Webhook URL (Read-only)</FormLabel>
+                                <FormControl><Input readOnly {...field} /></FormControl>
+                                <p className="text-sm text-muted-foreground">
+                                    Use this URL to set up a webhook in your Stripe Dashboard to listen for payment events.
+                                </p>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </CardContent>
+            </Card>
           
            <Card className="lg:col-span-3">
                 <CardHeader>
@@ -338,58 +419,7 @@ export default function SettingsPage() {
                     />
                 </CardContent>
             </Card>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Payment Gateway</CardTitle>
-                    <CardDescription>
-                        Configure a payment link to include in your invoices.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <FormField
-                        control={form.control}
-                        name="paymentGateway.enabled"
-                        render={({ field }) => (
-                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                                <div className="space-y-0.5">
-                                    <FormLabel className="text-base">Enable Payment Link</FormLabel>
-                                    <p className="text-sm text-muted-foreground">
-                                        Include a link for online payment in your invoices.
-                                    </p>
-                                </div>
-                                <FormControl>
-                                    <Switch
-                                        checked={field.value}
-                                        onCheckedChange={field.onChange}
-                                    />
-                                </FormControl>
-                            </FormItem>
-                        )}
-                    />
-                     <FormField
-                        control={form.control}
-                        name="paymentGateway.paymentLinkBaseUrl"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Payment Link Base URL</FormLabel>
-                                <FormControl>
-                                    <Input 
-                                        placeholder="e.g., https://buy.stripe.com/..." 
-                                        {...field} 
-                                        disabled={!form.watch('paymentGateway.enabled')}
-                                    />
-                                </FormControl>
-                                 <p className="text-sm text-muted-foreground">
-                                    Enter your full payment link URL (e.g., from Stripe or another gateway). Invoice details will be appended if the URL does not contain query params.
-                                </p>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                </CardContent>
-            </Card>
-
+            
             <Card className="lg:col-span-3">
                 <CardHeader>
                     <CardTitle>Email Notifications</CardTitle>
@@ -503,9 +533,9 @@ export default function SettingsPage() {
                                             </DropdownMenuItem>
                                             <AlertDialog>
                                                 <AlertDialogTrigger asChild>
-                                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                                        <Trash2 className="mr-2 h-4 w-4 text-destructive" />
-                                                        <span className="text-destructive">Delete</span>
+                                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
+                                                        <Trash2 className="mr-2 h-4 w-4" />
+                                                        Delete
                                                     </DropdownMenuItem>
                                                 </AlertDialogTrigger>
                                                 <AlertDialogContent>

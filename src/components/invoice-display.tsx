@@ -25,6 +25,7 @@ export function InvoiceDisplay({ invoice, settings, products, units }: InvoiceDi
   const appliedTax = invoice.taxId ? settings.taxes.find(t => t.id === invoice.taxId) : null;
   const taxAmount = invoice.taxAmount || 0;
   const total = subtotal + taxAmount;
+  const canPayOnline = settings.stripe?.secretKey && invoice.paymentLink;
   
   const getItemDescription = (productId: string) => {
       const product = products.find(p => p.id === productId);
@@ -133,10 +134,10 @@ export function InvoiceDisplay({ invoice, settings, products, units }: InvoiceDi
           </div>
         </div>
 
-        {invoice.paymentLink && (
+        {canPayOnline && (
             <div className="mt-8 text-center no-print">
                 <Button asChild size="lg">
-                    <Link href={invoice.paymentLink} target="_blank">
+                    <Link href={invoice.paymentLink!} target="_blank">
                         Pay Now
                     </Link>
                 </Button>

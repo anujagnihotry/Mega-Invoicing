@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useParams } from 'next/navigation';
@@ -30,15 +31,16 @@ export default function ViewInvoicePage() {
       </div>
     );
   }
+  const canPayOnline = settings.stripe?.secretKey && invoice.paymentLink;
 
   return (
     <div className="print-container">
       <div className="flex items-center mb-4 no-print">
          <h1 className="font-semibold text-lg md:text-2xl">Invoice {invoice.invoiceNumber}</h1>
          <div className="ml-auto flex items-center gap-2">
-            {invoice.paymentLink && (
+            {canPayOnline && (
                 <Button asChild variant="secondary">
-                    <Link href={invoice.paymentLink} target="_blank">
+                    <Link href={invoice.paymentLink!} target="_blank">
                         <CreditCard className="mr-2 h-4 w-4" />
                         Pay Online
                     </Link>

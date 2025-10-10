@@ -10,6 +10,7 @@ import type { Invoice, AppSettings, Product, PurchaseOrder, Unit, Tax, Supplier,
 import { generateId, formatCurrency } from '@/lib/utils';
 import { useUser } from '@/firebase';
 import { sendEmail } from '@/ai/flows/send-email';
+import { generateStripePaymentLink } from '@/ai/flows/generate-stripe-payment-link';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -43,10 +44,12 @@ const defaultSettings: AppSettings = {
   email: {
     sendOnNewInvoice: false,
   },
-  paymentGateway: {
-    enabled: false,
-    paymentLinkBaseUrl: '',
-  }
+  stripe: {
+    secretKey: '',
+    publishableKey: '',
+    dashboardUrl: 'https://dashboard.stripe.com',
+    webhookUrl: '',
+  },
 };
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
@@ -116,45 +119,47 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return (subtotal * tax.rate) / 100;
   }
   
-  const generatePaymentLink = (invoice: Invoice, total: number) => {
-    if (!settings.paymentGateway.enabled || !settings.paymentGateway.paymentLinkBaseUrl) {
-      return undefined;
-    }
-    
-    // The user will provide a full, pre-configured payment link (e.g., from Stripe or PayPal).
-    // We just use that URL directly.
-    try {
-      const url = new URL(settings.paymentGateway.paymentLinkBaseUrl);
-      return url.toString();
-    } catch (error) {
-      console.error("Invalid Payment Link Base URL:", error);
-      toast({
-        variant: 'destructive',
-        title: 'Invalid Payment URL',
-        description: 'The Payment Link Base URL in your settings is not a valid URL.'
-      })
-      return undefined;
-    }
-  };
-
-  const addInvoice = useCallback((invoiceData: Omit<Invoice, 'id' | 'currency' | 'taxAmount'>) => {
+  const addInvoice = useCallback(async (invoiceData: Omit<Invoice, 'id' | 'currency' | 'taxAmount'>) => {
     let newInvoice: Invoice | null = null;
+    const subtotal = invoiceData.items.reduce((acc, item) => acc + item.quantity * item.price, 0);
+    const taxAmount = calculateTaxAmount(subtotal, invoiceData.taxId);
+    const total = subtotal + taxAmount;
+
+    let paymentLink: string | undefined = undefined;
+
+    if (settings.stripe?.secretKey) {
+        try {
+            const result = await generateStripePaymentLink({
+                invoice_id: invoiceData.invoiceNumber,
+                amount: total,
+                currency: settings.currency,
+                description: `Payment for Invoice #${invoiceData.invoiceNumber}`,
+                stripeSecretKey: settings.stripe.secretKey,
+            });
+            paymentLink = result.payment_link_url;
+        } catch (error) {
+            console.error("Failed to generate Stripe payment link:", error);
+            toast({
+                variant: 'destructive',
+                title: 'Stripe Error',
+                description: 'Could not generate payment link. Please check your Stripe settings.',
+            });
+        }
+    }
+
+
     setProducts(prevProducts => {
       const newProducts = [...prevProducts];
       const invoiceId = generateId();
-      const subtotal = invoiceData.items.reduce((acc, item) => acc + item.quantity * item.price, 0);
-      const taxAmount = calculateTaxAmount(subtotal, invoiceData.taxId);
-      const total = subtotal + taxAmount;
-
+      
       newInvoice = {
         ...invoiceData,
         id: invoiceId,
         currency: settings.currency,
         items: invoiceData.items.map(item => ({ ...item, id: generateId() })),
         taxAmount: taxAmount,
+        paymentLink: paymentLink,
       };
-      
-      newInvoice.paymentLink = generatePaymentLink(newInvoice, total);
 
       for (const item of newInvoice.items) {
         const productIndex = newProducts.findIndex(p => p.id === item.productId);
@@ -179,29 +184,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           return;
       }
       
-      const subtotal = newInvoice.items.reduce((acc, item) => acc + item.quantity * item.price, 0);
-      const appliedTax = newInvoice.taxId ? settings.taxes.find(t => t.id === newInvoice.taxId) : null;
-      const total = subtotal + (newInvoice.taxAmount || 0);
-
-      const getProductName = (id: string) => products.find(p => p.id === id)?.name || 'N/A';
-      const getUnitName = (productId: string) => {
-          const product = products.find(p => p.id === productId);
-          if (!product) return '';
-          const unit = units.find(u => u.id === product.unitId);
-          return unit ? unit.name : '';
-      };
-
-
       const emailHtml = `
-      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: auto; border: 1px solid #ddd; padding: 20px;">
-          <h1 style="font-size: 24px; font-weight: bold;">Invoice from ${settings.companyProfile.name}</h1>
-          <p>Hi ${newInvoice.clientName},</p>
-          <p>Here is your invoice #${newInvoice.invoiceNumber} for ${formatCurrency(total, newInvoice.currency)}.</p>
-          ${newInvoice.paymentLink ? `<a href="${newInvoice.paymentLink}" style="background-color: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0;">Pay Now</a>` : ''}
-          <p>You can also view the attached PDF for full details.</p>
-          <p>Thank you for your business!</p>
-          <p>Best regards,<br>${settings.companyProfile.name}</p>
-      </div>
+            <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+                <h2 style="font-size: 22px; color: #000; text-align: center;">Invoice from ${settings.companyProfile.name}</h2>
+                <p>Hi ${newInvoice.clientName},</p>
+                <p>Please find your invoice #${newInvoice.invoiceNumber} for <strong>${formatCurrency(total, newInvoice.currency)}</strong> attached to this email.</p>
+                ${newInvoice.paymentLink ? `
+                <div style="text-align: center; margin: 20px 0;">
+                    <a href="${newInvoice.paymentLink}" style="background-color: #2563eb; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-size: 16px;">Pay Now</a>
+                </div>
+                ` : ''}
+                <p>If you have any questions, please don't hesitate to contact us.</p>
+                <p>Thank you for your business!</p>
+                <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+                <p style="font-size: 12px; color: #777;">${settings.companyProfile.name} | ${settings.companyProfile.address} | ${settings.companyProfile.phone}</p>
+            </div>
       `;
 
       // Create PDF
@@ -210,7 +207,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       // Header
       if (settings.appLogo) {
         try {
-          doc.addImage(settings.appLogo, 'PNG', 14, 15, 20, 20);
+          // Check if it's a data URI or a URL
+          if(settings.appLogo.startsWith('data:image')) {
+            const img = new Image();
+            img.src = settings.appLogo;
+            img.onload = () => {
+              doc.addImage(img, 'PNG', 14, 15, 20, 20);
+            }
+          }
         } catch(e) { console.error("Could not add logo to PDF:", e)}
       }
       doc.setFontSize(20);
@@ -251,6 +255,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       doc.text(new Date(newInvoice.dueDate).toLocaleDateString(), 196, 62, { align: 'right' });
 
       // Table
+      const getProductName = (id: string) => products.find(p => p.id === id)?.name || 'N/A';
+      const getUnitName = (productId: string) => {
+          const product = products.find(p => p.id === productId);
+          if (!product) return '';
+          const unit = units.find(u => u.id === product.unitId);
+          return unit ? unit.name : '';
+      };
+      
       doc.autoTable({
           startY: 80,
           head: [['Item', 'Quantity', 'Unit', 'Price', 'Amount']],
@@ -268,11 +280,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             3: { halign: 'right' },
             4: { halign: 'right' }
           },
-          didParseCell: function (data) {
-            if (data.section === 'head' && data.table.settings.columnStyles) {
-              const colStyles = data.table.settings.columnStyles;
-              if (colStyles[data.column.index]) {
-                data.cell.styles.halign = colStyles[data.column.index].halign;
+          didParseCell: function(data) {
+            if (data.section === 'head') {
+              const colIndex = data.column.index;
+              if (colIndex === 1 || colIndex === 2) { // Quantity & Unit
+                data.cell.styles.halign = 'center';
+              } else if (colIndex === 3 || colIndex === 4) { // Price & Amount
+                data.cell.styles.halign = 'right';
+              } else {
+                data.cell.styles.halign = 'left';
               }
             }
           }
@@ -281,6 +297,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const finalY = (doc as any).lastAutoTable.finalY;
 
       // Summary
+      const appliedTax = newInvoice.taxId ? settings.taxes.find(t => t.id === newInvoice.taxId) : null;
       const summaryX = 140;
       doc.setFontSize(11);
       doc.setTextColor(100);
@@ -301,11 +318,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       doc.setFontSize(11);
       doc.text(formatCurrency(subtotal, newInvoice.currency, true), 196, finalY + 10, { align: 'right' });
       if (appliedTax) {
-        doc.text(formatCurrency(newInvoice.taxAmount || 0, newInvoice.currency, true), 196, finalY + 16, { align: 'right' });
+        doc.text(formatCurrency(newInvoice.taxAmount || 0, newInvoice.currency, true), 196, summaryY - 6, { align: 'right' });
       }
 
       doc.setDrawColor(238, 238, 238); // #eeeeee
-      doc.line(summaryX, finalY + 16 + 5, 196, finalY + 16 + 5);
+      doc.line(summaryX, summaryY, 196, summaryY);
 
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
@@ -330,7 +347,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const pdfBase64 = doc.output('datauristring').split(',')[1];
       
       try {
-        sendEmail({
+        await sendEmail({
             to: newInvoice.clientEmail,
             subject: `Invoice #${newInvoice.invoiceNumber} from ${settings.appName}`,
             html: emailHtml,
@@ -364,7 +381,34 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [setInvoices, setProducts, settings, toast, products, units]);
 
 
-  const updateInvoice = useCallback((updatedInvoiceData: Omit<Invoice, 'currency' | 'taxAmount'>) => {
+  const updateInvoice = useCallback(async (updatedInvoiceData: Omit<Invoice, 'currency' | 'taxAmount'>) => {
+    const subtotal = updatedInvoiceData.items.reduce((acc, item) => acc + item.quantity * item.price, 0);
+    const taxAmount = calculateTaxAmount(subtotal, updatedInvoiceData.taxId);
+    const total = subtotal + taxAmount;
+
+    let paymentLink: string | undefined = updatedInvoiceData.paymentLink;
+
+    // Regenerate link only if one doesn't exist, to avoid creating new links on every edit
+    if (!paymentLink && settings.stripe?.secretKey) {
+        try {
+            const result = await generateStripePaymentLink({
+                invoice_id: updatedInvoiceData.invoiceNumber,
+                amount: total,
+                currency: settings.currency,
+                description: `Payment for Invoice #${updatedInvoiceData.invoiceNumber}`,
+                stripeSecretKey: settings.stripe.secretKey,
+            });
+            paymentLink = result.payment_link_url;
+        } catch (error) {
+            console.error("Failed to generate Stripe payment link:", error);
+            toast({
+                variant: 'destructive',
+                title: 'Stripe Error',
+                description: 'Could not regenerate payment link. Please check your Stripe settings.',
+            });
+        }
+    }
+     
      setProducts(prevProducts => {
         const newProducts = [...prevProducts];
         
@@ -394,24 +438,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
 
         // 3. Update the invoice itself
-        const subtotal = updatedInvoiceData.items.reduce((acc, item) => acc + item.quantity * item.price, 0);
-        const taxAmount = calculateTaxAmount(subtotal, updatedInvoiceData.taxId);
-        const total = subtotal + taxAmount;
-        
         let updatedInvoice: Invoice = {
           ...updatedInvoiceData,
           currency: settings.currency,
           items: updatedInvoiceData.items.map(item => ({...item, id: item.id || generateId()})),
           taxAmount: taxAmount,
+          paymentLink: paymentLink
         };
-        
-        updatedInvoice.paymentLink = generatePaymentLink(updatedInvoice, total);
         
         setInvoices(prevInvoices => prevInvoices.map(inv => inv.id === updatedInvoice.id ? updatedInvoice : inv));
 
         return newProducts;
     });
-  }, [invoices, setInvoices, setProducts, settings.currency, settings.taxes, settings.paymentGateway, toast]);
+  }, [invoices, setInvoices, setProducts, settings.currency, settings.taxes, settings.stripe, toast]);
 
 
   const deleteInvoice = useCallback((id: string) => {
@@ -584,7 +623,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     purchaseOrders,
     addPurchaseOrder: addPurchaseOrder as any,
     updatePurchaseOrder,
-    deletePurchaseOrder,
+deletePurchaseOrder,
     getPurchaseOrder,
     units,
     addUnit,
@@ -615,5 +654,3 @@ deleteSupplier,
 
   return <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>;
 }
-
-    

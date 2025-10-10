@@ -5,8 +5,8 @@ import type { Invoice, AppSettings, Product, PurchaseOrder, Unit, Tax, Supplier,
 export interface AppContextType {
   isLoading: boolean;
   invoices: Invoice[];
-  addInvoice: (invoice: Omit<Invoice, 'id' | 'currency' | 'items' | 'taxAmount'> & { items: Omit<Invoice['items'][0], 'id'>[] }) => void;
-  updateInvoice: (invoice: Omit<Invoice, 'currency' | 'items' | 'taxAmount'> & { items: Omit<Invoice['items'][0], 'id'>[] }) => void;
+  addInvoice: (invoice: Omit<Invoice, 'id' | 'currency' | 'items' | 'taxAmount'> & { items: Omit<Invoice['items'][0], 'id'>[] }) => Promise<void>;
+  updateInvoice: (invoice: Omit<Invoice, 'currency' | 'items' | 'taxAmount'> & { items: Omit<Invoice['items'][0], 'id'>[] }) => Promise<void>;
   getInvoice: (id: string) => Invoice | undefined;
   deleteInvoice: (id: string) => void;
   settings: AppSettings;

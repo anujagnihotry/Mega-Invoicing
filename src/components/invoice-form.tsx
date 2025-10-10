@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -21,7 +22,7 @@ import type { Invoice, InvoiceStatus, Tax } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { InvoiceReadabilityModal } from './invoice-readability-modal';
 import { InvoiceItemRow } from './invoice-item-row';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Separator } from './ui/separator';
 import { Textarea } from './ui/textarea';
 
@@ -54,6 +55,7 @@ export function InvoiceForm({ invoice }: InvoiceFormProps) {
   const router = useRouter();
   const { addInvoice, updateInvoice, settings, invoices, products, getAvailableStock } = useApp();
   const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Custom validation refinement
   const refinedSchema = formSchema.refine((data) => {
@@ -122,15 +124,17 @@ export function InvoiceForm({ invoice }: InvoiceFormProps) {
     name: 'items',
   });
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    setIsSubmitting(true);
     if (invoice) {
-      updateInvoice({ id: invoice.id, ...values });
+      await updateInvoice({ id: invoice.id, ...values });
       toast({ title: "Success", description: "Invoice updated successfully." });
     } else {
-      addInvoice(values);
+      await addInvoice(values);
       toast({ title: "Success", description: "Invoice created successfully." });
     }
     router.push('/invoices');
+    setIsSubmitting(false);
   };
 
   const watchItems = form.watch('items');
@@ -194,8 +198,8 @@ export function InvoiceForm({ invoice }: InvoiceFormProps) {
           </div>
           <div className="flex gap-2">
             <InvoiceReadabilityModal invoiceText={getInvoiceTextForAnalysis()} />
-            <Button type="submit">
-              {invoice ? 'Save Changes' : 'Create Invoice'}
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Saving...' : (invoice ? 'Save Changes' : 'Create Invoice')}
             </Button>
           </div>
         </div>
