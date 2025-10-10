@@ -6,7 +6,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { AppContext, AppContextType } from '@/contexts/app-context';
 import useLocalStorage from '@/hooks/use-local-storage';
-import type { Invoice, AppSettings, Product, PurchaseOrder, Unit, Tax, Supplier, PurchaseEntry, Category, PurchaseOrderStatus } from '@/lib/types';
+import type { Invoice, AppSettings, Product, PurchaseOrder, Unit, Tax, Supplier, PurchaseEntry, Category, PurchaseOrderStatus, InvoiceStatus } from '@/lib/types';
 import { generateId, formatCurrency } from '@/lib/utils';
 import { useUser } from '@/firebase';
 import { sendEmail } from '@/ai/flows/send-email';
@@ -79,17 +79,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [isUserLoading, user, pathname, router]);
 
-   // Effect to listen for storage changes from the webhook
+   // Effect to listen for storage changes from the webhook "simulation"
   useEffect(() => {
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key?.startsWith('stripe_payment_success_')) {
-        const invoiceNumber = event.key.replace('stripe_payment_success_', '');
+        const invoiceId = event.key.replace('stripe_payment_success_', '');
         setInvoices(prevInvoices => {
           const newInvoices = prevInvoices.map(inv => {
-            if (inv.invoiceNumber === invoiceNumber && inv.status !== 'Paid') {
+            if (inv.id === invoiceId && inv.status !== 'Paid') {
               toast({
                 title: 'Payment Received!',
-                description: `Invoice ${invoiceNumber} has been marked as paid.`,
+                description: `Invoice ${inv.invoiceNumber} has been marked as paid.`,
               });
               return { ...inv, status: 'Paid' as InvoiceStatus };
             }
@@ -104,10 +104,34 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     window.addEventListener('storage', handleStorageChange);
 
+    // This is a polling mechanism as a fallback for the webhook listener which is not robust.
+    // It checks for a success flag in the URL, which you can set up in Stripe's payment link configuration.
+    const urlParams = new URLSearchParams(window.location.search);
+    const stripeSuccess = urlParams.get('stripe_payment') === 'success';
+    const invoiceId = urlParams.get('invoice_id');
+
+    if (stripeSuccess && invoiceId) {
+        setInvoices(prevInvoices => {
+            return prevInvoices.map(inv => {
+                if (inv.id === invoiceId && inv.status !== 'Paid') {
+                    toast({
+                        title: 'Payment Confirmed!',
+                        description: `Invoice ${inv.invoiceNumber} has been paid.`,
+                    });
+                    return { ...inv, status: 'Paid' };
+                }
+                return inv;
+            });
+        });
+        // Clean up URL
+        router.replace(pathname);
+    }
+
+
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, [setInvoices, toast]);
+  }, [setInvoices, toast, pathname, router]);
   
   const getInvoice = useCallback((id: string): Invoice | undefined => {
     return invoices.find(invoice => invoice.id === id);
@@ -151,6 +175,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }
   
   const addInvoice = useCallback(async (invoiceData: Omit<Invoice, 'id' | 'currency' | 'taxAmount'>) => {
+    const newInvoiceId = generateId();
     let newInvoice: Invoice | null = null;
     const subtotal = invoiceData.items.reduce((acc, item) => acc + item.quantity * item.price, 0);
     const taxAmount = calculateTaxAmount(subtotal, invoiceData.taxId);
@@ -161,7 +186,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (settings.stripe?.secretKey) {
         try {
             const result = await generateStripePaymentLink({
-                invoice_id: invoiceData.invoiceNumber,
+                invoice_id: newInvoiceId, // Pass the new invoice ID to Stripe
                 amount: total,
                 currency: settings.currency,
                 description: `Payment for Invoice #${invoiceData.invoiceNumber}`,
@@ -181,11 +206,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     setProducts(prevProducts => {
       const newProducts = [...prevProducts];
-      const invoiceId = generateId();
       
       newInvoice = {
         ...invoiceData,
-        id: invoiceId,
+        id: newInvoiceId,
         currency: settings.currency,
         items: invoiceData.items.map(item => ({ ...item, id: generateId() })),
         taxAmount: taxAmount,
@@ -232,10 +256,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             </div>
       `;
 
-      // Create PDF
       const doc = new jsPDF();
-      
-      // Header
       if (settings.appLogo) {
         try {
             doc.addImage(settings.appLogo, 'PNG', 14, 15, 20, 20);
@@ -251,8 +272,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       doc.setFontSize(26);
       doc.setFont('helvetica', 'bold');
       doc.text('INVOICE', 196, 22, { align: 'right' });
-      
-      // Bill To & Invoice Details
       doc.setFontSize(10);
       doc.setTextColor(100);
       doc.text('Bill To', 14, 50);
@@ -263,7 +282,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       doc.setFont('helvetica', 'normal');
       doc.text(newInvoice.clientEmail, 14, 62);
       if(newInvoice.clientContact) doc.text(newInvoice.clientContact, 14, 68);
-
       const detailsX = 150;
       doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
@@ -271,14 +289,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       doc.text('Invoice #', detailsX, 50);
       doc.text('Invoice Date', detailsX, 56);
       doc.text('Due Date', detailsX, 62);
-      
       doc.setTextColor(0);
       doc.setFont('helvetica', 'normal');
       doc.text(newInvoice.invoiceNumber, 196, 50, { align: 'right' });
       doc.text(new Date(newInvoice.invoiceDate).toLocaleDateString(), 196, 56, { align: 'right' });
       doc.text(new Date(newInvoice.dueDate).toLocaleDateString(), 196, 62, { align: 'right' });
-
-      // Table
       const getProductName = (id: string) => products.find(p => p.id === id)?.name || 'N/A';
       const getUnitName = (productId: string) => {
           const product = products.find(p => p.id === productId);
@@ -297,6 +312,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             3: { halign: 'right' },
             4: { halign: 'right' }
           },
+          headStyles: {
+            halign: 'center',
+          },
+          didParseCell: function (data) {
+            if (data.section === 'head') {
+              if (data.column.index === 0) data.cell.styles.halign = 'left';
+              if (data.column.index === 3 || data.column.index === 4) data.cell.styles.halign = 'right';
+            }
+          },
           body: newInvoice.items.map(item => [
               getProductName(item.productId),
               item.quantity,
@@ -304,26 +328,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               formatCurrency(item.price, newInvoice!.currency, true),
               formatCurrency(item.quantity * item.price, newInvoice!.currency, true),
           ]),
-          didParseCell: function (data) {
-            if (data.section === 'head') {
-                if(data.column.index === 1 || data.column.index === 2) {
-                    data.cell.styles.halign = 'center';
-                } else if(data.column.index === 3 || data.column.index === 4) {
-                    data.cell.styles.halign = 'right';
-                }
-            }
-        },
       });
-      
       const finalY = (doc as any).lastAutoTable.finalY;
-
-      // Summary
       const appliedTax = newInvoice.taxId ? settings.taxes.find(t => t.id === newInvoice.taxId) : null;
       const summaryX = 140;
       doc.setFontSize(11);
       doc.setTextColor(100);
       doc.text('Subtotal', summaryX, finalY + 10);
-      
       let summaryY = finalY + 16;
       if (appliedTax) {
           doc.text(`${appliedTax.name} (${appliedTax.rate}%)`, summaryX, summaryY);
@@ -334,29 +345,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(0);
       doc.text('Total', summaryX, summaryY + 6);
-      
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(11);
       doc.text(formatCurrency(subtotal, newInvoice.currency, true), 196, finalY + 10, { align: 'right' });
       if (appliedTax) {
         doc.text(formatCurrency(newInvoice.taxAmount || 0, newInvoice.currency, true), 196, summaryY - 6, { align: 'right' });
       }
-
       doc.setDrawColor(238, 238, 238); // #eeeeee
       doc.line(summaryX, summaryY, 196, summaryY);
-
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
       doc.text(formatCurrency(total, newInvoice.currency, true), 196, summaryY + 6, { align: 'right' });
-
-      // Payment Link
       if (newInvoice.paymentLink) {
         doc.setFontSize(11);
         doc.setTextColor(40, 116, 240); // Blue color for link
         doc.textWithLink('Click here to pay online', 14, summaryY + 12, { url: newInvoice.paymentLink });
       }
-
-      // Footer Notes
       const notesStartY = summaryY + 30;
       doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
@@ -408,15 +412,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const total = subtotal + taxAmount;
 
     let paymentLink: string | undefined = updatedInvoiceData.paymentLink;
-
-    // Regenerate link only if one doesn't exist or amount changes, to avoid creating new links on every edit
     const originalInvoice = invoices.find(inv => inv.id === updatedInvoiceData.id);
     const originalTotal = originalInvoice ? (originalInvoice.items.reduce((acc, item) => acc + item.quantity * item.price, 0) + (originalInvoice.taxAmount || 0)) : 0;
 
     if (settings.stripe?.secretKey && (!paymentLink || total !== originalTotal)) {
         try {
             const result = await generateStripePaymentLink({
-                invoice_id: updatedInvoiceData.invoiceNumber,
+                invoice_id: updatedInvoiceData.id, // Pass existing ID
                 amount: total,
                 currency: settings.currency,
                 description: `Payment for Invoice #${updatedInvoiceData.invoiceNumber}`,
@@ -436,7 +438,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
      setProducts(prevProducts => {
         const newProducts = [...prevProducts];
         
-        // 1. Revert stock changes from the original invoice
         if (originalInvoice) {
             for (const item of originalInvoice.items) {
                 const productIndex = newProducts.findIndex(p => p.id === item.productId);
@@ -449,7 +450,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             }
         }
 
-        // 2. Apply stock changes for the updated invoice
         for (const item of updatedInvoiceData.items) {
             const productIndex = newProducts.findIndex(p => p.id === item.productId);
             if (productIndex !== -1) {
@@ -460,7 +460,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             }
         }
 
-        // 3. Update the invoice itself
         let updatedInvoice: Invoice = {
           ...updatedInvoiceData,
           currency: settings.currency,
@@ -516,7 +515,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [setProducts]);
   
   const deleteProduct = useCallback((productId: string) => {
-    // Also remove this product from any invoices that might be using it
     setInvoices(prev => prev.map(invoice => ({
         ...invoice,
         items: invoice.items.filter(item => item.productId !== productId)
@@ -596,7 +594,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const newEntry: PurchaseEntry = { id: generateId(), ...entry };
     setPurchaseEntries(prev => [...prev, newEntry]);
 
-    // If the entry is linked to a PO, update the PO's received quantities and status
     if (entry.purchaseOrderId) {
       setPurchaseOrders(prevPOs => {
         return prevPOs.map(po => {

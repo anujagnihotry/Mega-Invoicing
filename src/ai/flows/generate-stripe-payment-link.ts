@@ -48,7 +48,8 @@ const generateStripePaymentLinkFlow = ai.defineFlow(
     formData.append('line_items[0][price_data][product_data][name]', description);
     formData.append('line_items[0][price_data][unit_amount]', unitAmount.toString());
     formData.append('line_items[0][quantity]', '1');
-    formData.append('payment_intent_data[metadata][invoice_id]', invoice_id);
+    // Pass invoice_id in metadata for the webhook to identify the invoice
+    formData.append('metadata[invoice_id]', invoice_id);
 
     const response = await fetch('https://api.stripe.com/v1/payment_links', {
       method: 'POST',
