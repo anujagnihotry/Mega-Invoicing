@@ -5,7 +5,11 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function formatCurrency(amount: number, currency: string = 'USD') {
+export function formatCurrency(amount: number, currency: string = 'USD', forPdf: boolean = false) {
+  if (forPdf && currency === 'INR') {
+    // jsPDF default fonts don't support the Rupee symbol, so use a fallback for PDFs.
+    return `Rs. ${amount.toFixed(2)}`;
+  }
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency,

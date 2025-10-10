@@ -349,8 +349,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               getProductName(item.productId),
               item.quantity,
               getUnitName(item.productId),
-              formatCurrency(item.price, newInvoice!.currency),
-              formatCurrency(item.quantity * item.price, newInvoice!.currency),
+              formatCurrency(item.price, newInvoice!.currency, true),
+              formatCurrency(item.quantity * item.price, newInvoice!.currency, true),
           ]),
           headStyles: { fillColor: [248, 249, 250], textColor: 50, fontStyle: 'bold', halign: 'left' },
           styles: { halign: 'left' },
@@ -384,9 +384,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(11);
-      doc.text(formatCurrency(subtotal, newInvoice.currency), 196, finalY + 10, { align: 'right' });
+      doc.text(formatCurrency(subtotal, newInvoice.currency, true), 196, finalY + 10, { align: 'right' });
       if (appliedTax) {
-        doc.text(formatCurrency(newInvoice.taxAmount || 0, newInvoice.currency), 196, finalY + 16, { align: 'right' });
+        doc.text(formatCurrency(newInvoice.taxAmount || 0, newInvoice.currency, true), 196, finalY + 16, { align: 'right' });
       }
 
       doc.setDrawColor(238, 238, 238); // #eeeeee
@@ -394,7 +394,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
-      doc.text(formatCurrency(total, newInvoice.currency), 196, summaryY + 6, { align: 'right' });
+      doc.text(formatCurrency(total, newInvoice.currency, true), 196, summaryY + 6, { align: 'right' });
 
 
       // Footer Notes
