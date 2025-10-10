@@ -75,7 +75,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [invoices]);
 
   const getSupplier = useCallback((id: string): Supplier | undefined => {
-    return suppliers.find(supplier => supplier.id === id);
+    return suppliers.find(supplier => supplier.id === supplier.id);
   }, [suppliers]);
   
   const getPurchaseOrder = useCallback((id: string): PurchaseOrder | undefined => {
@@ -163,15 +163,102 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
 
       const emailHtml = `
-      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd;">
-        <h2 style="color: #444;">Invoice from ${settings.companyProfile.name}</h2>
-        <p>Dear ${newInvoice.clientName},</p>
-        <p>Please find attached your invoice #${newInvoice.invoiceNumber}.</p>
-        <p><strong>Total Amount Due: ${formatCurrency(total, newInvoice.currency)}</strong></p>
-        <p><strong>Due Date: ${new Date(newInvoice.dueDate).toLocaleDateString()}</strong></p>
-        <br>
-        <p>Thank you for your business!</p>
-        <p><em>${settings.companyProfile.name}</em></p>
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: auto; border: 1px solid #ddd; padding: 20px;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="padding-bottom: 20px; vertical-align: top;">
+              ${settings.appLogo ? `<img src="${settings.appLogo}" alt="${settings.appName}" style="height: 64px; width: auto;">` : ''}
+              <h1 style="font-size: 24px; margin: 0; font-weight: bold;">${settings.companyProfile.name}</h1>
+              <p style="margin: 0; font-size: 14px; color: #555;">${settings.companyProfile.address.replace(/\n/g, '<br>')}</p>
+              <p style="margin: 0; font-size: 14px; color: #555;">${settings.companyProfile.phone}</p>
+            </td>
+            <td style="text-align: right; vertical-align: top;">
+              <h2 style="font-size: 40px; margin: 0; color: #888; text-transform: uppercase;">Invoice</h2>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="2" style="padding-top: 30px; padding-bottom: 30px;">
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="width: 50%; vertical-align: top;">
+                    <p style="margin: 0; font-size: 14px; color: #555;">Bill To</p>
+                    <p style="margin: 5px 0 0; font-size: 18px; font-weight: bold;">${newInvoice.clientName}</p>
+                    <p style="margin: 5px 0 0; color: #555;">${newInvoice.clientEmail}</p>
+                  </td>
+                  <td style="width: 50%; text-align: right; vertical-align: top;">
+                    <table style="width: 250px; margin-left: auto; text-align: right;">
+                      <tr>
+                        <td style="font-weight: bold; color: #555;">Invoice #</td>
+                        <td>${newInvoice.invoiceNumber}</td>
+                      </tr>
+                       <tr>
+                        <td style="font-weight: bold; color: #555;">Invoice Date</td>
+                        <td>${new Date(newInvoice.invoiceDate).toLocaleDateString()}</td>
+                      </tr>
+                       <tr>
+                        <td style="font-weight: bold; color: #555;">Due Date</td>
+                        <td>${new Date(newInvoice.dueDate).toLocaleDateString()}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="2">
+              <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                <thead style="background-color: #f8f9fa;">
+                  <tr>
+                    <th style="padding: 10px; text-transform: uppercase; font-size: 12px; color: #555;">Item</th>
+                    <th style="padding: 10px; text-transform: uppercase; font-size: 12px; color: #555; text-align: center;">Quantity</th>
+                    <th style="padding: 10px; text-transform: uppercase; font-size: 12px; color: #555; text-align: center;">Unit</th>
+                    <th style="padding: 10px; text-transform: uppercase; font-size: 12px; color: #555; text-align: right;">Price</th>
+                    <th style="padding: 10px; text-transform: uppercase; font-size: 12px; color: #555; text-align: right;">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${newInvoice.items.map(item => `
+                    <tr style="border-bottom: 1px solid #eee;">
+                      <td style="padding: 10px; font-weight: 500;">${getProductName(item.productId)}</td>
+                      <td style="padding: 10px; text-align: center;">${item.quantity}</td>
+                      <td style="padding: 10px; text-align: center;">${getUnitName(item.productId)}</td>
+                      <td style="padding: 10px; text-align: right;">${formatCurrency(item.price, newInvoice!.currency)}</td>
+                      <td style="padding: 10px; text-align: right; font-weight: 500;">${formatCurrency(item.price * item.quantity, newInvoice!.currency)}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="2" style="text-align: right; padding-top: 20px;">
+              <table style="width: 300px; margin-left: auto; text-align: right;">
+                <tr>
+                  <td style="color: #555;">Subtotal</td>
+                  <td>${formatCurrency(subtotal, newInvoice!.currency)}</td>
+                </tr>
+                ${appliedTax ? `
+                <tr>
+                  <td style="color: #555;">${appliedTax.name} (${appliedTax.rate}%)</td>
+                  <td>${formatCurrency(newInvoice!.taxAmount || 0, newInvoice!.currency)}</td>
+                </tr>
+                ` : ''}
+                <tr><td colspan="2" style="border-top: 1px solid #eee; padding-top: 10px; margin-top:10px;"></td></tr>
+                <tr style="font-weight: bold; font-size: 20px;">
+                  <td>Total</td>
+                  <td>${formatCurrency(total, newInvoice!.currency)}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="2" style="padding-top: 40px;">
+              <h4 style="margin: 0 0 5px; font-weight: bold;">Notes</h4>
+              <p style="margin: 0; color: #555; font-size: 14px;">${newInvoice.notes || 'Thank you for your business. Please pay within the due date.'}</p>
+            </td>
+          </tr>
+        </table>
       </div>
       `;
 
@@ -181,9 +268,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       // Header
       if (settings.appLogo && settings.appLogo.startsWith('http')) {
         try {
-          // This is a simplified approach. A more robust solution might involve fetching the image first.
-          // jsPDF has limitations with cross-origin images unless the server has CORS enabled.
-          // For simplicity, we assume the logo can be loaded.
           doc.addImage(settings.appLogo, 'PNG', 14, 15, 20, 20);
         } catch(e) { console.error("Could not add logo to PDF:", e)}
       }
@@ -239,7 +323,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             fillColor: [248, 249, 250],
             textColor: 50,
             fontStyle: 'bold',
-            halign: 'center' // Default alignment for headers
+            halign: 'left', // Default header alignment
           },
           columnStyles: {
             0: { halign: 'left' },
@@ -249,14 +333,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             4: { halign: 'right' }
           },
           didParseCell: function (data) {
-              if (data.section === 'head') {
-                  // Apply specific alignments to header cells based on the columnStyles
-                  const colIndex = data.column.index;
-                  if (data.table.options.columnStyles[colIndex]) {
-                      data.cell.styles.halign = data.table.options.columnStyles[colIndex].halign;
-                  }
-              }
-          }
+            if (data.section === 'head' && data.table.head[0]?.[data.column.index]) {
+                const colIndex = data.column.index;
+                const colStyles = data.table.settings.columnStyles;
+                if (colStyles && colStyles[colIndex]) {
+                    data.cell.styles.halign = colStyles[colIndex].halign;
+                }
+            }
+          },
       });
       
       const finalY = (doc as any).lastAutoTable.finalY;

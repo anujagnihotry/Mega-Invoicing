@@ -10,11 +10,18 @@ export function formatCurrency(amount: number, currency: string = 'USD', forPdf:
     // jsPDF default fonts don't support the Rupee symbol, so use a fallback for PDFs.
     return `Rs. ${amount.toFixed(2)}`;
   }
-  return new Intl.NumberFormat('en-US', {
+  
+  const formatter = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency,
     minimumFractionDigits: 2,
-  }).format(amount);
+  });
+
+  if (currency === 'INR') {
+    return formatter.format(amount).replace('₹', '₹ ');
+  }
+
+  return formatter.format(amount);
 }
 
 export function generateId() {
