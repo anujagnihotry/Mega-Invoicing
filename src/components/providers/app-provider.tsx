@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -194,7 +195,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                     <table style="width: 100%; border-collapse: collapse; text-align: left;">
                         <thead>
                             <tr style="background-color: #f8f8f8;">
-                                <th style="padding: 10px; border-bottom: 2px solid #ddd;">Item</th>
+                                <th style="padding: 10px; border-bottom: 2px solid #ddd; text-align: left;">Item</th>
                                 <th style="padding: 10px; border-bottom: 2px solid #ddd; text-align: center;">Quantity</th>
                                 <th style="padding: 10px; border-bottom: 2px solid #ddd; text-align: center;">Unit</th>
                                 <th style="padding: 10px; border-bottom: 2px solid #ddd; text-align: right;">Price</th>
@@ -204,7 +205,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                         <tbody>
                             ${newInvoice.items.map(item => `
                                 <tr style="border-bottom: 1px solid #eee;">
-                                    <td style="padding: 10px;">${getProductName(item.productId)}</td>
+                                    <td style="padding: 10px; text-align: left;">${getProductName(item.productId)}</td>
                                     <td style="padding: 10px; text-align: center;">${item.quantity}</td>
                                     <td style="padding: 10px; text-align: center;">${getUnitName(item.productId)}</td>
                                     <td style="padding: 10px; text-align: right;">${formatCurrency(item.price, newInvoice!.currency)}</td>
@@ -316,11 +317,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             3: { halign: 'right' },
             4: { halign: 'right' }
           },
-          didParseCell: function (data) {
-            if (data.section === 'head') {
-              data.cell.styles.halign = data.table.options.columnStyles[data.column.index].halign;
-            }
-          }
       });
       
       const finalY = (doc as any).lastAutoTable.finalY;
@@ -371,7 +367,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       try {
         sendEmail({
             to: newInvoice.clientEmail,
-            subject: `Invoice #${newInvoice.invoiceNumber} from ${settings.companyProfile.name}`,
+            subject: `Invoice #${newInvoice.invoiceNumber} from ${settings.appName}`,
             html: emailHtml,
             smtpConfig: settings.smtp,
             attachments: [
