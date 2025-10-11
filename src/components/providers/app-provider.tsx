@@ -285,6 +285,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           headStyles: {
             fillColor: [238, 238, 238],
             textColor: [51, 51, 51],
+            halign: 'center',
           },
           columnStyles: {
             0: { halign: 'left' },
@@ -292,11 +293,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             2: { halign: 'center' },
             3: { halign: 'right' },
             4: { halign: 'right' }
-          },
-          didParseCell: function (data) {
-            if (data.section === 'head') {
-              data.cell.styles.halign = data.column.styles.halign;
-            }
           },
           body: newInvoice.items.map(item => [
               getProductName(item.productId),
@@ -651,5 +647,6 @@ deleteSupplier,
 
   return <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>;
 }
+
 
 
