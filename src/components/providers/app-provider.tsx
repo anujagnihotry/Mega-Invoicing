@@ -174,6 +174,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                 currency: settings.currency,
                 description: `Payment for Invoice #${invoiceData.invoiceNumber}`,
                 stripeSecretKey: settings.stripe.secretKey,
+                successBaseUrl: window.location.origin,
             });
             paymentLink = result.payment_link_url;
         } catch (error) {
@@ -205,7 +206,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           if (!newProducts[productIndex].sales) {
             newProducts[productIndex].sales = [];
           }
-          newProducts[productIndex].sales.push({ invoiceId: newInvoice.id, quantity: item.quantity });
+          newProducts[productIndex].sales.push({ invoiceId: newInvoice!.id, quantity: item.quantity });
         }
       }
       setInvoices(prev => [...prev, newInvoice!]);
@@ -291,7 +292,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           headStyles: {
             fillColor: [238, 238, 238],
             textColor: [51, 51, 51],
-            halign: 'center',
+            halign: 'center'
           },
           columnStyles: {
             0: { halign: 'left' },
@@ -402,6 +403,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                 currency: settings.currency,
                 description: `Payment for Invoice #${updatedInvoiceData.invoiceNumber}`,
                 stripeSecretKey: settings.stripe.secretKey,
+                successBaseUrl: window.location.origin,
             });
             paymentLink = result.payment_link_url;
         } catch (error) {

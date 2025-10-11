@@ -17,6 +17,7 @@ const GenerateStripePaymentLinkInputSchema = z.object({
   currency: z.string().describe('The currency for the payment (e.g., USD, INR).'),
   description: z.string().describe('A description for the payment.'),
   stripeSecretKey: z.string().describe('The Stripe Secret Key for authentication.'),
+  successBaseUrl: z.string().url().describe('The base URL for the success redirect.'),
 });
 export type GenerateStripePaymentLinkInput = z.infer<typeof GenerateStripePaymentLinkInputSchema>;
 
@@ -38,11 +39,11 @@ const generateStripePaymentLinkFlow = ai.defineFlow(
     outputSchema: GenerateStripePaymentLinkOutputSchema,
   },
   async (input) => {
-    const { amount, currency, description, stripeSecretKey, invoice_id } = input;
+    const { amount, currency, description, stripeSecretKey, invoice_id, successBaseUrl } = input;
 
     // Stripe requires the amount in the smallest currency unit (e.g., cents)
     const unitAmount = Math.round(amount * 100);
-    const successUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/invoices?stripe_payment=success&invoice_id=${invoice_id}`;
+    const successUrl = `${successBaseUrl}/invoices?stripe_payment=success&invoice_id=${invoice_id}`;
 
     const formData = new URLSearchParams();
     formData.append('line_items[0][price_data][currency]', currency);
