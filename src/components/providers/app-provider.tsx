@@ -79,58 +79,35 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [isUserLoading, user, pathname, router]);
 
-   // Effect to listen for storage changes from the webhook "simulation"
+   // Effect to check for successful Stripe payment on redirect.
   useEffect(() => {
-    const handleStorageChange = (event: StorageEvent) => {
-      if (event.key?.startsWith('stripe_payment_success_')) {
-        const invoiceId = event.key.replace('stripe_payment_success_', '');
-        setInvoices(prevInvoices => {
-          const newInvoices = prevInvoices.map(inv => {
-            if (inv.id === invoiceId && inv.status !== 'Paid') {
-              toast({
-                title: 'Payment Received!',
-                description: `Invoice ${inv.invoiceNumber} has been marked as paid.`,
-              });
-              return { ...inv, status: 'Paid' as InvoiceStatus };
-            }
-            return inv;
-          });
-          return newInvoices;
-        });
-        // Clean up the flag from local storage
-        localStorage.removeItem(event.key);
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-
-    // This is a polling mechanism as a fallback for the webhook listener which is not robust.
-    // It checks for a success flag in the URL, which you can set up in Stripe's payment link configuration.
     const urlParams = new URLSearchParams(window.location.search);
     const stripeSuccess = urlParams.get('stripe_payment') === 'success';
     const invoiceId = urlParams.get('invoice_id');
 
     if (stripeSuccess && invoiceId) {
         setInvoices(prevInvoices => {
+            const alreadyPaid = prevInvoices.find(inv => inv.id === invoiceId)?.status === 'Paid';
+            if (alreadyPaid) {
+                // Clean up URL and do nothing if already paid
+                router.replace(pathname);
+                return prevInvoices;
+            }
+
             return prevInvoices.map(inv => {
-                if (inv.id === invoiceId && inv.status !== 'Paid') {
+                if (inv.id === invoiceId) {
                     toast({
                         title: 'Payment Confirmed!',
-                        description: `Invoice ${inv.invoiceNumber} has been paid.`,
+                        description: `Invoice ${inv.invoiceNumber} has been marked as Paid.`,
                     });
-                    return { ...inv, status: 'Paid' };
+                    return { ...inv, status: 'Paid' as InvoiceStatus };
                 }
                 return inv;
             });
         });
-        // Clean up URL
+        // Clean up URL after processing
         router.replace(pathname);
     }
-
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
   }, [setInvoices, toast, pathname, router]);
   
   const getInvoice = useCallback((id: string): Invoice | undefined => {
@@ -305,6 +282,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       doc.autoTable({
           startY: 80,
           head: [['Item', 'Quantity', 'Unit', 'Price', 'Amount']],
+          headStyles: {
+            fillColor: [238, 238, 238],
+            textColor: [51, 51, 51],
+          },
           columnStyles: {
             0: { halign: 'left' },
             1: { halign: 'center' },
@@ -312,13 +293,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             3: { halign: 'right' },
             4: { halign: 'right' }
           },
-          headStyles: {
-            halign: 'center',
-          },
           didParseCell: function (data) {
             if (data.section === 'head') {
-              if (data.column.index === 0) data.cell.styles.halign = 'left';
-              if (data.column.index === 3 || data.column.index === 4) data.cell.styles.halign = 'right';
+              data.cell.styles.halign = data.column.styles.halign;
             }
           },
           body: newInvoice.items.map(item => [
@@ -674,4 +651,5 @@ deleteSupplier,
 
   return <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>;
 }
+
 
