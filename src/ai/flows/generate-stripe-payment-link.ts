@@ -42,6 +42,7 @@ const generateStripePaymentLinkFlow = ai.defineFlow(
 
     // Stripe requires the amount in the smallest currency unit (e.g., cents)
     const unitAmount = Math.round(amount * 100);
+    const successUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002'}/invoices?stripe_payment=success&invoice_id=${invoice_id}`;
 
     const formData = new URLSearchParams();
     formData.append('line_items[0][price_data][currency]', currency);
@@ -50,6 +51,11 @@ const generateStripePaymentLinkFlow = ai.defineFlow(
     formData.append('line_items[0][quantity]', '1');
     // Pass invoice_id in metadata for the webhook to identify the invoice
     formData.append('metadata[invoice_id]', invoice_id);
+    
+    // Add success URL for redirecting after payment
+    formData.append('after_completion[type]', 'redirect');
+    formData.append('after_completion[redirect][url]', successUrl);
+
 
     const response = await fetch('https://api.stripe.com/v1/payment_links', {
       method: 'POST',

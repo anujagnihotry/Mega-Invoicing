@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -90,11 +88,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             const alreadyPaid = prevInvoices.find(inv => inv.id === invoiceId)?.status === 'Paid';
             if (alreadyPaid) {
                 // Clean up URL and do nothing if already paid
-                router.replace(pathname);
+                const newUrl = pathname; // URL without query params
+                if (window.history.replaceState) {
+                  window.history.replaceState({ path: newUrl }, '', newUrl);
+                }
                 return prevInvoices;
             }
 
-            return prevInvoices.map(inv => {
+            const newInvoices = prevInvoices.map(inv => {
                 if (inv.id === invoiceId) {
                     toast({
                         title: 'Payment Confirmed!',
@@ -104,11 +105,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                 }
                 return inv;
             });
+            return newInvoices;
         });
+        
         // Clean up URL after processing
-        router.replace(pathname);
+        const newUrl = pathname; // URL without query params
+        if (window.history.replaceState) {
+            window.history.replaceState({ path: newUrl }, '', newUrl);
+        }
     }
-  }, [setInvoices, toast, pathname, router]);
+  }, [setInvoices, toast, pathname]);
   
   const getInvoice = useCallback((id: string): Invoice | undefined => {
     return invoices.find(invoice => invoice.id === id);
@@ -647,6 +653,3 @@ deleteSupplier,
 
   return <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>;
 }
-
-
-
