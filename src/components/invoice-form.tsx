@@ -295,14 +295,14 @@ export function InvoiceForm({ invoice }: InvoiceFormProps) {
               control={form.control}
               name="invoiceDate"
               render={({ field }) => (
-                <FormItem className="flex flex-col">
+                <FormItem>
                   <FormLabel>Invoice Date</FormLabel>
                   <Popover>
                     <PopoverTrigger asChild>
                       <FormControl>
                         <Button
                           variant="outline"
-                          className={cn('pl-3 text-left font-normal', !field.value && 'text-muted-foreground')}
+                          className={cn('w-full pl-3 text-left font-normal', !field.value && 'text-muted-foreground')}
                         >
                           {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
                           <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
@@ -321,14 +321,14 @@ export function InvoiceForm({ invoice }: InvoiceFormProps) {
               control={form.control}
               name="dueDate"
               render={({ field }) => (
-                <FormItem className="flex flex-col">
+                <FormItem>
                   <FormLabel>Due Date</FormLabel>
                   <Popover>
                     <PopoverTrigger asChild>
                       <FormControl>
                         <Button
                           variant="outline"
-                          className={cn('pl-3 text-left font-normal', !field.value && 'text-muted-foreground')}
+                          className={cn('w-full pl-3 text-left font-normal', !field.value && 'text-muted-foreground')}
                         >
                           {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
                           <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
