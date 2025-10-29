@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, FileText, Settings, Warehouse, ShoppingCart, Ruler, History, Users, Truck, Folder, Package } from 'lucide-react';
+import { LayoutDashboard, FileText, Settings, Warehouse, ShoppingCart, Ruler, History, Users, Truck, Folder, Package, Receipt } from 'lucide-react';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from './ui/tooltip';
 
 export function MainNav({ isCollapsed }: { isCollapsed: boolean }) {
@@ -64,6 +64,12 @@ export function MainNav({ isCollapsed }: { isCollapsed: boolean }) {
       label: 'Suppliers',
       icon: Users,
       isActive: pathname.startsWith('/suppliers'),
+    },
+    {
+      href: '/tax-reporting',
+      label: 'Tax Reporting',
+      icon: Receipt,
+      isActive: pathname.startsWith('/tax-reporting'),
     },
     {
       href: '/settings',
