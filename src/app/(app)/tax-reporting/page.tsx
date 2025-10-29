@@ -15,10 +15,15 @@ import type { Invoice } from '@/lib/types';
 
 export default function TaxReportingPage() {
   const { invoices, settings } = useApp();
-  const [dateRange, setDateRange] = React.useState<{ from: Date | undefined; to: Date | undefined }>({
+  const [selectedDateRange, setSelectedDateRange] = React.useState<{ from: Date | undefined; to: Date | undefined }>({
     from: undefined,
     to: undefined,
   });
+   const [appliedDateRange, setAppliedDateRange] = React.useState<{ from: Date | undefined; to: Date | undefined }>({
+    from: undefined,
+    to: undefined,
+  });
+
 
   const filteredInvoices = React.useMemo(() => {
     return invoices.filter((invoice: Invoice) => {
@@ -26,15 +31,15 @@ export default function TaxReportingPage() {
         return false;
       }
       const invoiceDate = parseISO(invoice.invoiceDate);
-      if (dateRange.from && invoiceDate < dateRange.from) {
+      if (appliedDateRange.from && invoiceDate < appliedDateRange.from) {
         return false;
       }
-      if (dateRange.to && invoiceDate > dateRange.to) {
+      if (appliedDateRange.to && invoiceDate > appliedDateRange.to) {
         return false;
       }
       return true;
     });
-  }, [invoices, dateRange]);
+  }, [invoices, appliedDateRange]);
 
   const totalInvoices = filteredInvoices.length;
   const totalTax = filteredInvoices.reduce((sum, invoice) => sum + (invoice.taxAmount || 0), 0);
@@ -44,6 +49,16 @@ export default function TaxReportingPage() {
     const tax = settings.taxes.find(t => t.id === taxId);
     return tax ? `${tax.name} (${tax.rate}%)` : 'N/A';
   }
+  
+  const handleApplyFilter = () => {
+    setAppliedDateRange(selectedDateRange);
+  }
+
+  const handleClearFilter = () => {
+    setSelectedDateRange({ from: undefined, to: undefined });
+    setAppliedDateRange({ from: undefined, to: undefined });
+  }
+
 
   return (
     <div className="space-y-6">
@@ -61,17 +76,17 @@ export default function TaxReportingPage() {
             <PopoverTrigger asChild>
               <Button
                 variant={'outline'}
-                className="w-[280px] justify-start text-left font-normal"
+                className="w-full md:w-[280px] justify-start text-left font-normal"
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {dateRange.from ? format(dateRange.from, 'PPP') : <span>From date</span>}
+                {selectedDateRange.from ? format(selectedDateRange.from, 'PPP') : <span>From date</span>}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0">
               <Calendar
                 mode="single"
-                selected={dateRange.from}
-                onSelect={(date) => setDateRange(prev => ({...prev, from: date as Date}))}
+                selected={selectedDateRange.from}
+                onSelect={(date) => setSelectedDateRange(prev => ({...prev, from: date as Date}))}
                 initialFocus
               />
             </PopoverContent>
@@ -80,23 +95,24 @@ export default function TaxReportingPage() {
             <PopoverTrigger asChild>
               <Button
                 variant={'outline'}
-                className="w-[280px] justify-start text-left font-normal"
+                className="w-full md:w-[280px] justify-start text-left font-normal"
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {dateRange.to ? format(dateRange.to, 'PPP') : <span>To date</span>}
+                {selectedDateRange.to ? format(selectedDateRange.to, 'PPP') : <span>To date</span>}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0">
               <Calendar
                 mode="single"
-                selected={dateRange.to}
-                onSelect={(date) => setDateRange(prev => ({...prev, to: date as Date}))}
+                selected={selectedDateRange.to}
+                onSelect={(date) => setSelectedDateRange(prev => ({...prev, to: date as Date}))}
                 initialFocus
               />
             </PopoverContent>
           </Popover>
-           <Button onClick={() => setDateRange({ from: undefined, to: undefined })}>
-            Clear Filters
+           <Button onClick={handleApplyFilter}>Apply Filter</Button>
+           <Button onClick={handleClearFilter} variant="ghost">
+            Clear
           </Button>
         </CardContent>
       </Card>
