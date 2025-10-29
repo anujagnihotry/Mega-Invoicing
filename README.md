@@ -1,6 +1,6 @@
-# SwiftInvoice: Your All-in-One Invoicing & Inventory Management Solution
+# Magna Inventory Billing: Your All-in-One Invoicing & Inventory Management Solution
 
-SwiftInvoice is a powerful, modern, and scalable SaaS application designed to streamline your business operations. Built with a cutting-edge tech stack, it provides a comprehensive suite of tools to manage everything from invoices and payments to inventory and procurement, all within a single, intuitive interface.
+Magna Inventory Billing is a powerful, modern, and scalable SaaS application designed to streamline your business operations. Built with a cutting-edge tech stack, it provides a comprehensive suite of tools to manage everything from invoices and payments to inventory and procurement, all within a single, intuitive interface.
 
 This application is built entirely on the client-side, leveraging your browser's local storage for a fast, responsive, and offline-capable experience without the immediate need for complex backend infrastructure. It uses Firebase for secure user authentication and is architected to seamlessly integrate with a Firestore database for future scalability.
 
@@ -41,13 +41,13 @@ Get a real-time overview of your business health. The main dashboard provides at
 ### 6. **AI-Powered Enhancements**
 - **Invoice Readability Analysis:** Leverage the power of Google's Gemini models via Genkit to analyze your invoice's text and receive AI-driven suggestions for improving its clarity and professionalism.
 
-## Why SwiftInvoice is the Optimal Solution
+## Why Magna Inventory Billing is the Optimal Solution
 
-- **Modern & Performant Tech Stack:** Built with **Next.js**, **React**, and **Tailwind CSS**, SwiftInvoice offers a fast, responsive, and mobile-friendly user experience. Server Components and the App Router ensure optimal performance.
+- **Modern & Performant Tech Stack:** Built with **Next.js**, **React**, and **Tailwind CSS**, Magna Inventory Billing offers a fast, responsive, and mobile-friendly user experience. Server Components and the App Router ensure optimal performance.
 - **Client-Side First Architecture:** By leveraging browser `localStorage`, the application is incredibly fast and works offline. This architecture allows you to get started immediately without incurring backend or database costs, while being ready to scale to a full cloud backend (like Firestore) when needed.
 - **Secure by Design:** User management is handled by **Firebase Authentication**, a robust and secure service. Sensitive credentials like Stripe and SMTP keys are stored on the client, with clear warnings about security best practices.
 - **Scalable & Reusable Workflows:** The use of **Genkit** for server-side actions (like generating payment links and sending emails) creates reusable, powerful workflows that are decoupled from the UI, making the application easier to maintain and extend.
-- **End-to-End Business Logic:** SwiftInvoice isn't just an invoicing tool; it's a complete business management solution that seamlessly integrates sales, inventory, and procurement in one place, providing a single source of truth for your operations.
+- **End-to-End Business Logic:** Magna Inventory Billing isn't just an invoicing tool; it's a complete business management solution that seamlessly integrates sales, inventory, and procurement in one place, providing a single source of truth for your operations.
 
 ## Getting Started
 
